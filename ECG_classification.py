@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from keras.layers import Input, Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
 from keras.models import Model
 from keras.optimizers import Adam
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
 
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.metrics import multilabel_confusion_matrix
@@ -35,11 +35,9 @@ y_test = data['y_test']
 # Get the sample_weights for deal with the imbalanced dataset
 # If method equal to 0, get the weights by the method of 1 - num_amostras_label / num_amostras_totais
 # If method unequal to 0, get the weights by the function of sklearn
-method = 1
-if method == 0:
-    sample_weights_train = utils.get_weights(y_train=y_train)
-else:
-    sample_weights_train = compute_sample_weight(class_weight='balanced',y=y_train)
+
+# sample_weights_train = utils.get_weights(y_train=y_train)
+sample_weights_train = compute_sample_weight(class_weight='balanced',y=y_train)
 
 # print(sample_weights_train)
 
@@ -47,28 +45,40 @@ else:
 # Input layer
 input_layer = Input(shape=X_train.shape[1:])
 
-# model_name = 'rajpurkar'
-model_name = 'ribeiro'
+# model_name = 'ribeiro'
+model_name = 'rajpurkar'
 print(f'\n\nModel name = ', model_name)
 model = utils.get_model(input_layer, model_name)
-m = model.summary()
-
+model.summary()
 
 # Compile the model
 model.compile(loss='binary_crossentropy', optimizer=Adam(), metrics=['accuracy'])
+# testar sgd com momentum ao invés de adam
 
 # Callbacks
-callbacks = []
-# filepath='C:/Users/sarah/TCC/ECG Classification Models/Weights improvement/weights-improvement-{epoch:02d}-{val_loss:.2f}.h5'
 monitor = 'val_loss'
-callbacks.append(ReduceLROnPlateau(monitor=monitor, factor=0.1, patience=10, min_lr=0.001/1000))
-# callbacks.append(EarlyStopping(monitor=monitor, mode='auto', verbose=1, patience=10))
-# callbacks.append(ModelCheckpoint(filepath, monitor=monitor, mode='auto', verbose=1, save_best_only=True))
-print(callbacks)
+filepath='C:/Users/sarah/TCC/ECG Classification Models/Weights improvement/weights-improvement-{epoch:02d}-{val_loss:.2f}.h5'
+filename='results/rajpurkar_cb_100_callbacks_2.csv'
+callbacks = [
+    ReduceLROnPlateau(monitor=monitor, factor=0.1, patience=10, min_lr=1e-6),
+    EarlyStopping(monitor=monitor, mode='auto', verbose=1, patience=11),
+    # ModelCheckpoint(filepath, monitor=monitor, mode='auto', verbose=1, save_best_only=True),
+    CSVLogger(filename, separator=",", append=True)
+]
+
+epochs = 100
 
 # Training the model
-# history = model.fit(X_train, y_train, batch_size=64, epochs=10, validation_data=(X_test, y_test), callbacks=callbacks)
-history = model.fit(X_train, y_train, batch_size=64, epochs=10, validation_data=(X_test, y_test), callbacks=callbacks,sample_weight=sample_weights_train)
+# history = model.fit(X_train, y_train, batch_size=64, epochs=epochs, validation_data=(X_test, y_test), callbacks=callbacks)
+history = model.fit(
+    X_train, y_train, batch_size=64, epochs=epochs, validation_data=(X_test, y_test),
+    callbacks=callbacks,sample_weight=sample_weights_train
+)
+
+# Save the training metrics over the training epochs in a 
+# np.save('results/history_sb_100.npy',history.history)
+# To load the file, use:
+# history_sb_100 = np.load('history1.npy',allow_pickle='TRUE').item()
 
 # Plot results
 plt.plot(history.epoch, history.history['loss'], '-o')

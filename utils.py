@@ -61,7 +61,7 @@ def get_weights(y_train):
 
 # Rajpurkar model functions
 # Create residual blocks
-def residual_blocks_rajpurkar(x,i=0, stride=1, num_filter=64, rate_drop=0, initializer='none'):
+def residual_blocks_rajpurkar(x,i=0, stride=1, num_filter=64, rate_drop=0.5, initializer='none'):
 
     bn_1 = BatchNormalization()(x)
     relu_1 = ReLU()(bn_1)
@@ -92,7 +92,7 @@ def skip_connection(skip, num_filter=128, rate_drop=0, initializer='none', downs
     return skip
 
 # Create the residual blocks
-def residual_blocks_ribeiro(input, i=0, num_filter=128, rate_drop=0, initializer='none', downsample=1):
+def residual_blocks_ribeiro(input, num_filter=128, rate_drop=0, initializer='none', downsample=1):
 
     layer, skip = input
 
@@ -110,8 +110,6 @@ def residual_blocks_ribeiro(input, i=0, num_filter=128, rate_drop=0, initializer
     layer = BatchNormalization()(layer)
     layer = ReLU()(layer)
     layer = Dropout(rate_drop)(layer)
-
-    if i==3: skip = None
 
     return layer, skip
 
@@ -144,7 +142,10 @@ def get_model(input_layer, model_name):
         num_filter = np.array([64, 64, 64, 128, 128, 128, 128, 192, 192, 192, 192, 256, 256, 256, 256])
         for i in range(15):
             #print(f"i = {i} STRIDE = {(i % 2)+1}, FILTER LENGHT = {num_filter[i]}")
-            layers = residual_blocks_rajpurkar(layers, i=i, stride=(i % 2)+1, num_filter = num_filter[i], rate_drop=rate_drop, initializer=initializer)
+            layers = residual_blocks_rajpurkar(
+                layers, i=i, stride=(i % 2)+1, num_filter = num_filter[i], 
+                rate_drop=rate_drop, initializer=initializer
+            )
 
         # Last layers
         # The ﬁnal fully connected layer and sigmoid activation produce a distribution 
@@ -172,7 +173,7 @@ def get_model(input_layer, model_name):
 
         # Residual Blocks
         for i in range(4):
-            layer, skip = residual_blocks_ribeiro([layer,skip], i=i, num_filter = num_filter[i], rate_drop=rate_drop, initializer=initializer, downsample=downsample)
+            layer, skip = residual_blocks_ribeiro([layer,skip], num_filter = num_filter[i], rate_drop=rate_drop, initializer=initializer, downsample=downsample)
 
         # Output block
         layer = Flatten()(layer)
