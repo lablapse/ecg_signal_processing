@@ -1,67 +1,17 @@
-# File that contain all the function used in the ECG classification code
-
 # Python packages
 import numpy as np
-import matplotlib.pyplot as plt
-from keras.layers import Input, Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping
-
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import multilabel_confusion_matrix
-from sklearn.metrics import classification_report
-from sklearn.utils.class_weight import compute_sample_weight
-
 import pandas as pd
-import seaborn as sns
-
-# Get the weights for deal with the imbalanced dataset
-def get_weights(y_train):
-    # Get the possible labels in the training set
-    y_unique = np.unique(y_train, axis=0)
-
-    lst = [0 for x in range(len(y_unique))]
-    soma = 0
-
-    # Count the quantity of the labels y_unique appears in y_train
-    for i in range(len(y_train)):
-        for j in range(len(y_unique)):
-            if np.array_equal(y_train[i], y_unique[j]):
-                lst[j] += 1
-
-    y_unique_str = ['0' for x in range(len(y_unique))]
-    perc = [0 for x in range(len(y_unique))]
-    perc_inv = [0 for x in range(len(y_unique))]
-    lst_perc = [0 for x in range(len(y_train))]
-
-    # Get the labels and transform in string / Sum the total of labels
-    for i in range(len(y_unique)):
-        y_unique_str[i] = str(y_unique[i])
-        soma += lst[i]
-
-    # Calculate the the ratio of quantity of labels in the training set
-    for i in range(len(lst)):
-        perc[i] = round(((lst[i] / soma) * 100), 2)
-        perc_inv[i] = round(((1 - (lst[i] / soma)) * 100), 2)
-
-    # Get a list with the corresponding weight for all the examples of the y_train
-    for i in range(len(y_train)):
-        for j in range(len(y_unique)):
-            if np.array_equal(y_train[i], y_unique[j]):
-                lst_perc[i] = perc_inv[j]
-
-    d = {'Labels':y_unique_str, 'Quantity':lst, 'Percent (%)':perc, 'Inv Percent (%)':perc_inv}
-
-    df = pd.DataFrame(data=d)
-    print(df)
-
-    return np.array(lst_perc)
+import matplotlib.pyplot as plt
+from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
+from keras.models import Model
+from sklearn.metrics import classification_report
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import multilabel_confusion_matrix
 
 
 # Rajpurkar model functions
 # Create residual blocks
-def residual_blocks_rajpurkar(x,i=0, stride=1, num_filter=64, rate_drop=0, initializer='none'):
+def residual_blocks_rajpurkar(x,i=0, stride=1, num_filter=64, rate_drop=0.5, initializer='none'):
 
     bn_1 = BatchNormalization()(x)
     relu_1 = ReLU()(bn_1)
@@ -92,7 +42,7 @@ def skip_connection(skip, num_filter=128, rate_drop=0, initializer='none', downs
     return skip
 
 # Create the residual blocks
-def residual_blocks_ribeiro(input, i=0, num_filter=128, rate_drop=0, initializer='none', downsample=1):
+def residual_blocks_ribeiro(input, num_filter=128, rate_drop=0, initializer='none', downsample=1):
 
     layer, skip = input
 
@@ -111,16 +61,13 @@ def residual_blocks_ribeiro(input, i=0, num_filter=128, rate_drop=0, initializer
     layer = ReLU()(layer)
     layer = Dropout(rate_drop)(layer)
 
-    if i==3: skip = None
-
     return layer, skip
-
 
 # Get the models os the network
 def get_model(input_layer, model_name):
 
     if model_name == 'rajpurkar':
-        rate_drop = 0.5
+        rate_drop = 1 - 0.8
         initializer='he_normal'
 
         # First layer
@@ -144,7 +91,10 @@ def get_model(input_layer, model_name):
         num_filter = np.array([64, 64, 64, 128, 128, 128, 128, 192, 192, 192, 192, 256, 256, 256, 256])
         for i in range(15):
             #print(f"i = {i} STRIDE = {(i % 2)+1}, FILTER LENGHT = {num_filter[i]}")
-            layers = residual_blocks_rajpurkar(layers, i=i, stride=(i % 2)+1, num_filter = num_filter[i], rate_drop=rate_drop, initializer=initializer)
+            layers = residual_blocks_rajpurkar(
+                layers, i=i, stride=(i % 2)+1, num_filter = num_filter[i], 
+                rate_drop=rate_drop, initializer=initializer
+            )
 
         # Last layers
         # The ﬁnal fully connected layer and sigmoid activation produce a distribution 
@@ -172,7 +122,7 @@ def get_model(input_layer, model_name):
 
         # Residual Blocks
         for i in range(4):
-            layer, skip = residual_blocks_ribeiro([layer,skip], i=i, num_filter = num_filter[i], rate_drop=rate_drop, initializer=initializer, downsample=downsample)
+            layer, skip = residual_blocks_ribeiro([layer,skip], num_filter = num_filter[i], rate_drop=rate_drop, initializer=initializer, downsample=downsample)
 
         # Output block
         layer = Flatten()(layer)
@@ -183,20 +133,50 @@ def get_model(input_layer, model_name):
 
     return model
 
+# Get the metrics
+def get_metrics(y_test, prediction, prediction_bin, target_names):
 
+    print("\nReports from the classification:")
 
-# Transform the binary vector in a list with strings (could be y_test or the predictions)
-def get_strings(label_string,label_bin):
-    label_bin_string = []
-    for x in range(len(label_bin)):
-        lst = []
-        for y in range(len(label_string)):
-            value = label_bin[x][y]
-            if value == 1:
-                lst.append(label_string[y])
-        label_bin_string.append(lst)
-    
-    return label_bin_string
+    report = classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names)
+    report_df = pd.DataFrame.from_dict(report, orient='index')
+    print(report_df)
+
+    roc_auc_macro = roc_auc_score(y_test, prediction, average='macro')
+    roc_auc_micro = roc_auc_score(y_test, prediction, average='micro')
+    roc_auc_weighted = roc_auc_score(y_test, prediction, average='weighted')
+    roc_auc_none = roc_auc_score(y_test, prediction, average=None)
+
+    print(f'ROC AUC macro = {roc_auc_macro}')
+    print(f'ROC AUC micro = {roc_auc_micro}')
+    print(f'ROC AUC weighted = {roc_auc_weighted}')
+    print(f'ROC AUC None = {roc_auc_none}')
+
+    return
+
+# Plot results
+def plot_results(history,model_name,epochs):
+    # Plot results
+    plt.plot(history.epoch, history.history['loss'], '-o')
+    plt.plot(history.epoch, history.history['val_loss'], '-*')
+
+    plt.xlabel('Epochs')
+    plt.ylabel('Cost')
+    plt.legend(['Training set', 'Validation set'])
+    plt.savefig(f'./plots/[{model_name}][Loss][{100}].png')
+    # plt.show()
+
+    # #Plot results
+    plt.plot(history.epoch, history.history['accuracy'], '-o')
+    plt.plot(history.epoch, history.history['val_accuracy'], '-*')
+
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend(['Training set', 'Validation set'])
+    plt.savefig(f'./plots/[{model_name}][Accuracy][100].png')
+    # plt.show()
+
+    return
 
 # Transform the values in the confusion matrix in percentage
 def get_cm_percent(cm, total):
@@ -206,3 +186,28 @@ def get_cm_percent(cm, total):
             for k in range(cm.shape[2]):
                 cm_perc[i][j][k] = round((cm[i][j][k] / total) * 100, 2)
     return cm_perc
+
+# Plot confusion matrix
+def plot_confusion_matrix(y_test, prediction_bin, model_name):
+    # Confusion matrix
+    cm = multilabel_confusion_matrix(y_test, prediction_bin)
+    cm_perc = get_cm_percent(cm=cm, total=len(prediction_bin))
+
+    print(f'\n{cm}')
+    # print(f'\n{cm_perc}')
+
+    # Plot confusion matrix
+    # fig = plt.figure(figsize = (14, 8))
+
+    # for i, (label, matrix) in enumerate(zip(label_string, cm_perc)):
+    #     plt.subplot(f'23{i+1}')
+    #     labels = [f'Not {label}', label]
+    #     ax = sns.heatmap(matrix, annot = True, square = True, fmt = '.2f', cbar = False, cmap = 'Blues',
+    #                 xticklabels = labels, yticklabels = labels, linecolor = 'black', linewidth = 1)
+    #     for t in ax.texts: t.set_text(t.get_text() + "%")
+    #     plt.title(label)
+    # plt.tight_layout()
+    # plt.savefig(f'./plots/[{model_name}][CM][100].png')
+    # plt.show()
+
+
