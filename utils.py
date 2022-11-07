@@ -2,12 +2,28 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
 from keras.models import Model
+
 from sklearn.metrics import classification_report
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import multilabel_confusion_matrix
+from sklearn.utils.class_weight import compute_sample_weight
 
+import seaborn as sns
+import pathlib
+
+import plot_utils as putils
+
+import tensorflow as tf
+
+physical_devices = tf.config.list_physical_devices('GPU')
+try:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+except:
+    # Invalid device or cannot modify virtual devices once initialized.
+    pass
 
 # Rajpurkar model functions
 # Create residual blocks
@@ -66,21 +82,26 @@ def residual_blocks_ribeiro(input, num_filter=128, rate_drop=0, initializer='non
 # Get the models os the network
 def get_model(input_layer, model_name):
 
-    if model_name == 'rajpurkar':
+    if 'rajpurkar' in model_name:
         rate_drop = 1 - 0.8
-        initializer='he_normal'
+        initializer = 'he_normal'
+
+        conv_config = dict(
+            kernel_size=16, filters=64,
+            padding="same", kernel_initializer=initializer
+        )
 
         # First layer
-        conv_1 = Conv1D(kernel_size=16, filters=64, strides=1, padding="same", kernel_initializer=initializer)(input_layer)
+        conv_1 = Conv1D(strides=1, **conv_config)(input_layer)
         bn_1 = BatchNormalization()(conv_1)
         relu_1 = ReLU()(bn_1)
 
         # Second layer
-        conv_2 = Conv1D(kernel_size=16, filters=64, strides=1, padding="same", kernel_initializer=initializer)(relu_1)
+        conv_2 = Conv1D(strides=1, **conv_config)(relu_1)
         bn_2 = BatchNormalization()(conv_2)
         relu_2 = ReLU()(bn_2)
         drop_1 = Dropout(rate_drop)(relu_2)
-        conv_3 = Conv1D(kernel_size = 16, filters=64, strides=2, padding="same", kernel_initializer=initializer)(drop_1)
+        conv_3 = Conv1D(strides=2, **conv_config)(drop_1)
 
         # Short connection
         short_1 = MaxPooling1D(pool_size=1, strides=2)(relu_1)
@@ -88,11 +109,16 @@ def get_model(input_layer, model_name):
         # Adding layers
         layers = Add()([conv_3, short_1])
 
-        num_filter = np.array([64, 64, 64, 128, 128, 128, 128, 192, 192, 192, 192, 256, 256, 256, 256])
+        num_filter = [
+            64, 64, 64,
+            128, 128, 128, 128,
+            192, 192, 192, 192,
+            256, 256, 256, 256
+        ]
         for i in range(15):
             #print(f"i = {i} STRIDE = {(i % 2)+1}, FILTER LENGHT = {num_filter[i]}")
             layers = residual_blocks_rajpurkar(
-                layers, i=i, stride=(i % 2)+1, num_filter = num_filter[i], 
+                layers, i=i, stride=(i % 2)+1, num_filter=num_filter[i],
                 rate_drop=rate_drop, initializer=initializer
             )
 
@@ -105,13 +131,15 @@ def get_model(input_layer, model_name):
         dense_x = Dense(32)(flat_x)
         classification = Dense(5, activation='sigmoid')(dense_x)
     
-    elif model_name == 'ribeiro':
+    elif 'ribeiro' in model_name:
         initializer = 'he_normal'
-        rate_drop = 1- 0.8
+        rate_drop = 1 - 0.8
         downsample = 4
 
         # Input block
-        layers = Conv1D(kernel_size=16, filters=64, strides=1, padding="same", kernel_initializer=initializer)(input_layer) # Output_size = (1000, 64)
+        layers = Conv1D(
+            kernel_size=16, filters=64, strides=1, padding="same", kernel_initializer=initializer
+        )(input_layer)  # Output_size = (1000, 64)
         layers = BatchNormalization()(layers)
         layers = ReLU()(layers)
 
@@ -122,11 +150,17 @@ def get_model(input_layer, model_name):
 
         # Residual Blocks
         for i in range(4):
-            layer, skip = residual_blocks_ribeiro([layer,skip], num_filter = num_filter[i], rate_drop=rate_drop, initializer=initializer, downsample=downsample)
+            layer, skip = residual_blocks_ribeiro(
+                [layer, skip], num_filter=num_filter[i], rate_drop=rate_drop, initializer=initializer, downsample=downsample
+            )
 
         # Output block
         layer = Flatten()(layer)
-        classification = Dense(5,activation='sigmoid',kernel_initializer=initializer)(layer)
+        classification = Dense(5, activation='sigmoid',
+                               kernel_initializer=initializer)(layer)
+    else:
+        print('Wrong name')
+        return
 
     # Constructing the model
     model = Model(inputs=input_layer, outputs=classification)
@@ -155,26 +189,38 @@ def get_metrics(y_test, prediction, prediction_bin, target_names):
     return
 
 # Plot results
-def plot_results(history,model_name,epochs):
+def plot_results(history, name, metric, plot_path='plots'):
+
+    # Make sure the plot folder exists
+    plot_path = pathlib.Path(plot_path)
+    plot_path.mkdir(parents=True, exist_ok=True)
+
     # Plot results
-    plt.plot(history.epoch, history.history['loss'], '-o')
-    plt.plot(history.epoch, history.history['val_loss'], '-*')
+    fig, ax = plt.subplots()
+    ax.plot(history.epoch, history.history[metric], '-o')
+    ax.plot(history.epoch, history.history[f'val_{metric}'], '-*')
 
-    plt.xlabel('Epochs')
-    plt.ylabel('Cost')
-    plt.legend(['Training set', 'Validation set'])
-    plt.savefig(f'./plots/[{model_name}][Loss][{100}].png')
-    # plt.show()
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel(f'{metric}'.capitalize())
+    ax.legend(['Training set', 'Validation set'])
 
-    # #Plot results
-    plt.plot(history.epoch, history.history['accuracy'], '-o')
-    plt.plot(history.epoch, history.history['val_accuracy'], '-*')
+    # Save figure in multiple formats
+    filename = plot_path / f'[{name}][{metric}]'
+    fig.savefig(f'{filename}.png', format='png', dpi=600)
+    fig.savefig(f'{filename}.pdf', format='pdf')
 
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend(['Training set', 'Validation set'])
-    plt.savefig(f'./plots/[{model_name}][Accuracy][100].png')
-    # plt.show()
+    # # Plot results
+    # fig, ax = plt.subplots()
+    # ax.plot(history.epoch, history.history['accuracy'], '-o')
+    # ax.plot(history.epoch, history.history['val_accuracy'], '-*')
+    # ax.set_xlabel('Epochs')
+    # ax.set_ylabel('Accuracy')
+    # ax.legend(['Training set', 'Validation set'])
+
+    # # Save figure in multiple formats
+    # filename = f'{plot_path}/[{model_name}][Accuracy][100]'
+    # fig.savefig(f'{filename}.png', format='png', dpi=600)
+    # fig.savefig(f'{filename}.pdf', format='pdf')
 
     return
 
@@ -188,26 +234,46 @@ def get_cm_percent(cm, total):
     return cm_perc
 
 # Plot confusion matrix
-def plot_confusion_matrix(y_test, prediction_bin, model_name):
+
+
+def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='plots'):
+
+    # Make sure the plot folder exists
+    plot_path = pathlib.Path(plot_path)
+    plot_path.mkdir(parents=True, exist_ok=True)
+
+    sample_weight = compute_sample_weight(
+        class_weight='balanced', y=y_test)
+
     # Confusion matrix
-    cm = multilabel_confusion_matrix(y_test, prediction_bin)
-    cm_perc = get_cm_percent(cm=cm, total=len(prediction_bin))
+    cm = multilabel_confusion_matrix(y_test, y_pred)
+    cm_perc = get_cm_percent(cm=cm, total=len(y_pred))
 
     print(f'\n{cm}')
     # print(f'\n{cm_perc}')
 
     # Plot confusion matrix
-    # fig = plt.figure(figsize = (14, 8))
+    fig_list = []
+    for i, (label, matrix) in enumerate(zip(target_names, cm_perc)):
+        fig, ax = plt.subplots()
 
-    # for i, (label, matrix) in enumerate(zip(label_string, cm_perc)):
-    #     plt.subplot(f'23{i+1}')
-    #     labels = [f'Not {label}', label]
-    #     ax = sns.heatmap(matrix, annot = True, square = True, fmt = '.2f', cbar = False, cmap = 'Blues',
-    #                 xticklabels = labels, yticklabels = labels, linecolor = 'black', linewidth = 1)
-    #     for t in ax.texts: t.set_text(t.get_text() + "%")
-    #     plt.title(label)
-    # plt.tight_layout()
-    # plt.savefig(f'./plots/[{model_name}][CM][100].png')
-    # plt.show()
+        labels = [f'Não é {label}', label]
+        sns.heatmap(matrix, annot=True, square=True, fmt='.2f', cbar=False, cmap='Blues',
+                         xticklabels=labels, yticklabels=labels, linecolor='black', linewidth=1, ax=ax)
+        for t in ax.texts:
+            t.set_text(t.get_text() + '%')
+        ax.set_xlabel('Rótulo predito')
+        ax.set_ylabel('Rótulo verdadeiro')
+        fig.tight_layout()
+
+        fig_folder = plot_path / f'figures-{model_name}'
+        name = f'confusion_matrix-{label}'
+        putils.save_fig(fig, name, path=fig_folder, figsize='square', usetex=False)
+
+        # fig.savefig(f'{filename}.png', format='png', dpi=600)
+        # fig.savefig(f'{filename}.pdf', format='pdf')
+        fig_list.append(fig)
+
+    return fig_list
 
 

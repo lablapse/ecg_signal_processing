@@ -27,7 +27,7 @@ def load_data(df, data_folder):
 
     return data
 
-path = 'Z:/datasets/ptbxl'
+path = '/home/datasets/ptbxl'
 path = pathlib.Path(path)
 sampling_rate = 100
 
@@ -45,7 +45,7 @@ print(diag_names)
 subdiag_dict = dict(meta_scp.diagnostic_class)
 
 def simple_diagnostic(scp_codes):
-    vec = np.zeros(diag_names.size, dtype='int')    
+    vec = np.zeros(diag_names.size, dtype='int')
     for key, item in scp_codes.items():
         if key in meta_scp.index:
             diag_class = subdiag_dict[key]

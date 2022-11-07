@@ -4,6 +4,7 @@
 *.npz
 *.npy
 *.csv
+*.h5
 
 # Figures
 *.png

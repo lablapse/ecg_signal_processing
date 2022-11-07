@@ -14,6 +14,9 @@ from sklearn.utils.class_weight import compute_sample_weight
 import pandas as pd
 import seaborn as sns
 
+from datetime import datetime
+import pathlib
+
 import utils
 import train_model
 
@@ -33,8 +36,12 @@ y_test = data['y_test']
 target_names = ['CD', 'HYP', 'MI', 'NORM', 'STTC']
 
 # Get the model
-model_name = 'rajpurkar'
-# model_name = 'ribeiro'
+# model_name = 'rajpurkar'
+model_name = 'ribeiro'
+
+timestamp = datetime.now().isoformat()
+model_name = f'{model_name}-{timestamp}'
+
 input_layer = Input(shape=X_train.shape[1:])
 model = utils.get_model(input_layer, model_name)
 # model.summary()
@@ -53,9 +60,8 @@ prediction = model.predict(X_test)
 prediction_bin = np.array(prediction)
 prediction_bin = (prediction > 0.5).astype('int')
 
-# Get the metrics
+# Save results
 utils.get_metrics(y_test, prediction, prediction_bin, target_names)
-
-# Plot results and confusion matrix
-utils.plot_results(history,model_name)
-utils.plot_confusion_matrix(y_test, prediction_bin, model_name)
+utils.plot_confusion_matrix(y_test, prediction_bin, model_name, target_names)
+utils.plot_results(history, name=model_name, metric='loss')
+utils.plot_results(history, name=model_name, metric='accuracy')
