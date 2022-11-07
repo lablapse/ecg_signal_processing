@@ -71,7 +71,6 @@ Y = np.array(Y.tolist())    # CD, HYP, MI, NORM, STTC
 X = load_data(metadata, path)
 
 # The dataset has 10 possible "validation folds",
-# choose one from 1 to 10 and split data into train and test
 # Folds 1-8 for training, fold 9 for validation and fold 10 for test
 val_fold = 9
 test_fold = 10
@@ -87,23 +86,6 @@ y_val = Y[metadata.strat_fold.values == val_fold]
 # Train (folds 1-8)
 X_train = X[metadata.strat_fold.values < val_fold]
 y_train = Y[metadata.strat_fold.values < val_fold]
-
-
-# Train
-# train_index = metadata.strat_fold.values < val_fold
-# X_train = X[train_index, ]
-# y_train = Y[train_index, ]
-
-# Val
-# val_index = metadata.strat_fold.values == val_fold
-# X_val = X[val_index, ]
-# y_val = Y[val_index, ]
-
-# Test
-# test_index = metadata.strat_fold.values == test_fold
-# X_test = X[test_index, ]
-# y_test = Y[test_index, ]
-
 
 # Save metadata
 metadata.to_csv('metadata.csv', index=False)
