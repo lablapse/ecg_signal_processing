@@ -10,7 +10,7 @@
 *.pdf
 
 # ECG dataset
-ptb-xl/
+ptbxl/
 
 # VSCode
 .vscode/
