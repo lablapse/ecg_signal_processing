@@ -71,7 +71,7 @@ def format_figure(
     if figsize == 'paper':
         figsize_dims = np.array([9, 4.5])
     elif figsize == 'square':
-        figsize_dims = np.array([5.5, 5])
+        figsize_dims = np.array([9.5, 9])
 
     # Convert from cm to inch
     figsize_dims = np.array(figsize_dims) / 2.54

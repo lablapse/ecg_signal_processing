@@ -6,10 +6,9 @@ import matplotlib.pyplot as plt
 from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
 from keras.models import Model
 
-from sklearn.metrics import classification_report
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import multilabel_confusion_matrix
 from sklearn.utils.class_weight import compute_sample_weight
+import sklearn.metrics as skmetrics
+from mlcm import mlcm
 
 import seaborn as sns
 import pathlib
@@ -172,14 +171,14 @@ def get_metrics(y_test, prediction, prediction_bin, target_names):
 
     print("\nReports from the classification:")
 
-    report = classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names)
+    report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names)
     report_df = pd.DataFrame.from_dict(report, orient='index')
     print(report_df)
 
-    roc_auc_macro = roc_auc_score(y_test, prediction, average='macro')
-    roc_auc_micro = roc_auc_score(y_test, prediction, average='micro')
-    roc_auc_weighted = roc_auc_score(y_test, prediction, average='weighted')
-    roc_auc_none = roc_auc_score(y_test, prediction, average=None)
+    roc_auc_macro = skmetrics.roc_auc_score(y_test, prediction, average='macro')
+    roc_auc_micro = skmetrics.roc_auc_score(y_test, prediction, average='micro')
+    roc_auc_weighted = skmetrics.roc_auc_score(y_test, prediction, average='weighted')
+    roc_auc_none = skmetrics.roc_auc_score(y_test, prediction, average=None)
 
     print(f'ROC AUC macro = {roc_auc_macro}')
     print(f'ROC AUC micro = {roc_auc_micro}')
@@ -197,8 +196,8 @@ def plot_results(history, name, metric, plot_path='plots'):
 
     # Plot results
     fig, ax = plt.subplots()
-    ax.plot(history.epoch, history.history[metric], '-o')
-    ax.plot(history.epoch, history.history[f'val_{metric}'], '-*')
+    ax.plot(history.epoch, history[metric], '-o')
+    ax.plot(history.epoch, history[f'val_{metric}'], '-*')
 
     ax.set_xlabel('Epochs')
     ax.set_ylabel(f'{metric}'.capitalize())
@@ -234,9 +233,89 @@ def get_cm_percent(cm, total):
     return cm_perc
 
 # Plot confusion matrix
-
-
 def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='plots'):
+
+    # Make sure the plot folder exists
+    plot_path = pathlib.Path(plot_path)
+    plot_path.mkdir(parents=True, exist_ok=True)
+
+    # Confusion matrix
+    print('########## MLCM ##########')
+    cm, _ = mlcm.cm(y_test, y_pred)
+    # cm = cm[:-1, :-1]
+    target_names = list(target_names).append('NoC')
+
+    # calculating the normal confusion matrix
+    divide = cm.sum(axis=1, dtype='int64')
+    divide[divide == 0] = 1
+    cm_norm = 100 * cm / divide[:, None]
+
+    fig, ax = plot_cm(np.round(cm_norm).astype(int), target_names)
+
+    name = f'{model_name}-cm'
+    putils.save_fig(fig, name, path=plot_path, figsize=(), usetex=False)
+
+    print('Raw confusion Matrix:')
+    print(cm)
+    print('Normalized confusion Matrix (%):')
+    print(cm_norm)
+
+
+def plot_cm(confusion_matrix, class_names, fontsize=14, cmap='YlGnBu', ax=None):
+    """Plots a confusion matrix, as returned by sklearn.metrics.confusion_matrix, as a heatmap.
+    Modified from `shaypal5's gist`.
+    
+    Arguments
+    ---------
+    confusion_matrix: numpy.ndarray
+        The numpy.ndarray object returned from a call to sklearn.metrics.confusion_matrix. 
+        Similarly constructed ndarrays can also be used.
+    class_names: list
+        An ordered list of class names, in the order they index the given confusion matrix.
+    figsize: tuple
+        A 2-long tuple, the first value determining the horizontal size of the ouputted figure,
+        the second determining the vertical size. Defaults to (10,7).
+    fontsize: int
+        Font size for axes labels. Defaults to 14.
+    cmap: str
+        Colormap for the heatmap (see `Colormaps in Matplotlib`). Defaults to YlGnBu.
+        
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The resulting confusion matrix figure
+
+    References
+    ----------
+    .. _shaypal5's gist:
+       https://gist.github.com/shaypal5/94c53d765083101efc0240d776a23823
+    
+    .. _Colormaps in Matplotlib:
+       https://matplotlib.org/tutorials/colors/colormaps.html
+    """
+
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    df_cm = pd.DataFrame(
+        confusion_matrix, index=class_names, columns=class_names,
+    )
+
+    try:
+        heatmap = sns.heatmap(df_cm, annot=True, fmt='d', cmap=cmap)
+    except ValueError:
+        raise ValueError("Confusion matrix values must be integers.")
+    heatmap.yaxis.set_ticklabels(
+        heatmap.yaxis.get_ticklabels(), rotation=0, ha='right', fontsize=fontsize)
+    heatmap.xaxis.set_ticklabels(
+        heatmap.xaxis.get_ticklabels(), rotation=45, ha='right', fontsize=fontsize)
+    ax.ylabel('True label', fontsize=fontsize, fontweight='bold')
+    ax.xlabel('Predicted label', fontsize=fontsize, fontweight='bold')
+
+    return fig, ax
+
+
+def _plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='plots'):
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path)
@@ -246,7 +325,7 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='p
         class_weight='balanced', y=y_test)
 
     # Confusion matrix
-    cm = multilabel_confusion_matrix(y_test, y_pred)
+    cm = skmetrics.multilabel_confusion_matrix(y_test, y_pred)
     cm_perc = get_cm_percent(cm=cm, total=len(y_pred))
 
     print(f'\n{cm}')
@@ -259,7 +338,7 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='p
 
         labels = [f'Não é {label}', label]
         sns.heatmap(matrix, annot=True, square=True, fmt='.2f', cbar=False, cmap='Blues',
-                         xticklabels=labels, yticklabels=labels, linecolor='black', linewidth=1, ax=ax)
+                    xticklabels=labels, yticklabels=labels, linecolor='black', linewidth=1, ax=ax)
         for t in ax.texts:
             t.set_text(t.get_text() + '%')
         ax.set_xlabel('Rótulo predito')
@@ -268,12 +347,12 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='p
 
         fig_folder = plot_path / f'figures-{model_name}'
         name = f'confusion_matrix-{label}'
-        putils.save_fig(fig, name, path=fig_folder, figsize='square', usetex=False)
+        putils.save_fig(fig, name, path=fig_folder,
+                        figsize='square', usetex=False)
 
         # fig.savefig(f'{filename}.png', format='png', dpi=600)
         # fig.savefig(f'{filename}.pdf', format='pdf')
         fig_list.append(fig)
 
     return fig_list
-
 
