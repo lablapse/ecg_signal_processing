@@ -233,27 +233,31 @@ def get_cm_percent(cm, total):
     return cm_perc
 
 # Plot confusion matrix
-def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='plots'):
+def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='results'):
 
     # Make sure the plot folder exists
-    plot_path = pathlib.Path(plot_path)
+    plot_path = pathlib.Path(plot_path) / model_name
     plot_path.mkdir(parents=True, exist_ok=True)
 
     # Confusion matrix
     print('########## MLCM ##########')
     cm, _ = mlcm.cm(y_test, y_pred)
     # cm = cm[:-1, :-1]
-    target_names = list(target_names).append('NoC')
+    target_names = np.array([*target_names, 'NoC'])
 
     # calculating the normal confusion matrix
     divide = cm.sum(axis=1, dtype='int64')
     divide[divide == 0] = 1
     cm_norm = 100 * cm / divide[:, None]
 
-    fig, ax = plot_cm(np.round(cm_norm).astype(int), target_names)
+    # fig, ax = plot_cm(np.round(cm_norm).astype(int), target_names)
+    fig, ax = plot_cm(cm_norm, target_names)
 
-    name = f'{model_name}-cm'
-    putils.save_fig(fig, name, path=plot_path, figsize=(), usetex=False)
+    name = f"{model_name.split('-')[0]}-cm"
+    tight_kws = {'rect' : (0, 0, 1.1, 1)}
+    putils.save_fig(fig, name, path=plot_path, figsize='square',
+                    tight_scale='both', usetex=False, tight_kws=tight_kws)
+    # putils.format_figure(fig, figsize='square', tight_scale='both')
 
     print('Raw confusion Matrix:')
     print(cm)
@@ -261,7 +265,7 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='p
     print(cm_norm)
 
 
-def plot_cm(confusion_matrix, class_names, fontsize=14, cmap='YlGnBu', ax=None):
+def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
     """Plots a confusion matrix, as returned by sklearn.metrics.confusion_matrix, as a heatmap.
     Modified from `shaypal5's gist`.
     
@@ -294,23 +298,31 @@ def plot_cm(confusion_matrix, class_names, fontsize=14, cmap='YlGnBu', ax=None):
        https://matplotlib.org/tutorials/colors/colormaps.html
     """
 
-    if ax is None:
-        fig, ax = plt.subplots()
+    fig, ax = plt.subplots()
 
     df_cm = pd.DataFrame(
         confusion_matrix, index=class_names, columns=class_names,
     )
 
-    try:
-        heatmap = sns.heatmap(df_cm, annot=True, fmt='d', cmap=cmap)
-    except ValueError:
-        raise ValueError("Confusion matrix values must be integers.")
-    heatmap.yaxis.set_ticklabels(
-        heatmap.yaxis.get_ticklabels(), rotation=0, ha='right', fontsize=fontsize)
-    heatmap.xaxis.set_ticklabels(
-        heatmap.xaxis.get_ticklabels(), rotation=45, ha='right', fontsize=fontsize)
-    ax.ylabel('True label', fontsize=fontsize, fontweight='bold')
-    ax.xlabel('Predicted label', fontsize=fontsize, fontweight='bold')
+    sns.heatmap(df_cm, annot=True, square=True, fmt='.1f', cbar=False, annot_kws={"size": fontsize},
+        cmap=cmap, xticklabels=class_names, yticklabels=class_names, ax=ax)
+    for t in ax.texts:
+        t.set_text(t.get_text() + '%')
+
+    xticks = ax.get_xticklabels()
+    xticks[-1].set_text('NPL')
+    ax.set_xticklabels(xticks)
+
+    yticks = ax.get_yticklabels()
+    yticks[-1].set_text('NTL')
+    ax.set_yticklabels(yticks)
+
+    ax.xaxis.set_label_position('top')
+    ax.xaxis.tick_top()
+
+    ax.set_xlabel('Rótulo predito')
+    ax.set_ylabel('Rótulo verdadeiro')
+    fig.tight_layout()
 
     return fig, ax
 

@@ -42,7 +42,7 @@ color_list = list(mcolors.TABLEAU_COLORS)
 # 16cm x 10cm (square)
 def format_figure(
         fig: Figure, figsize='paper', times='Times New Roman', arial='Arial',
-        tight_scale='x', custom=None
+        tight_scale='x', custom=None, tight_kws=None
 ):
 
     # Assumes a single axis in figure (no support for plt.subplots)
@@ -71,7 +71,10 @@ def format_figure(
     if figsize == 'paper':
         figsize_dims = np.array([9, 4.5])
     elif figsize == 'square':
-        figsize_dims = np.array([9.5, 9])
+        figsize_dims = np.array([10, 9])
+        ticks_font = mfont.FontProperties(size=10, **arial_dict)
+        labels_font = mfont.FontProperties(size=12, **times_dict)
+        legend_font = mfont.FontProperties(size=10, **times_dict)
 
     # Convert from cm to inch
     figsize_dims = np.array(figsize_dims) / 2.54
@@ -136,7 +139,10 @@ def format_figure(
     ax.yaxis.offsetText.set_font(ticks_font)
 
     # Really tight layout (default pad is ~1.0)
-    fig.tight_layout(pad=0.1, h_pad=None, w_pad=None, rect=None)
+    if tight_kws is None:
+        fig.tight_layout(pad=0.1, h_pad=None, w_pad=None, rect=None)
+    else:
+        fig.tight_layout(pad=0.1, **tight_kws)
 
     return fig
 

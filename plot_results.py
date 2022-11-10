@@ -40,3 +40,7 @@ utils.get_metrics(y_test, prediction, prediction_bin, target_names)
 utils.plot_confusion_matrix(y_test, prediction_bin, model_name, target_names)
 utils.plot_results(history, name=model_name, metric='loss')
 utils.plot_results(history, name=model_name, metric='accuracy')
+
+plt.show()
+
+print()
