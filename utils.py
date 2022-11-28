@@ -180,12 +180,23 @@ def get_metrics(y_test, prediction, prediction_bin, target_names, model_name, cm
     csv_report_mlcm = pathlib.Path(csv_report_mlcm)
     csv_path_auc = pathlib.Path(csv_path_auc)
 
+<<<<<<< HEAD
     # Make sure the files are saved in a folder that exists
     csv_report.parent.mkdir(parents=True, exist_ok=True)
     csv_report_mlcm.parent.mkdir(parents=True, exist_ok=True)
     csv_path_auc.parent.mkdir(parents=True, exist_ok=True)
 
     # print("\nReports from the classification:")
+=======
+    report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names)
+    report_df = pd.DataFrame.from_dict(report, orient='index')
+    print(report_df)
+
+    roc_auc_macro = skmetrics.roc_auc_score(y_test, prediction, average='macro')
+    roc_auc_micro = skmetrics.roc_auc_score(y_test, prediction, average='micro')
+    roc_auc_weighted = skmetrics.roc_auc_score(y_test, prediction, average='weighted')
+    roc_auc_none = skmetrics.roc_auc_score(y_test, prediction, average=None)
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
 
     report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names)
     report_mlcm = mlcm.stats(cm, False)
@@ -221,8 +232,8 @@ def plot_results(history, name, metric, plot_path='plots'):
 
     # Plot results
     fig, ax = plt.subplots()
-    ax.plot(history.epoch, history.history[metric], '-o')
-    ax.plot(history.epoch, history.history[f'val_{metric}'], '-*')
+    ax.plot(history.epoch, history[metric], '-o')
+    ax.plot(history.epoch, history[f'val_{metric}'], '-*')
 
     ax.set_xlabel('Epochs')
     ax.set_ylabel(f'{metric}'.capitalize())
@@ -258,18 +269,29 @@ def get_cm_percent(cm, total):
     return cm_perc
 
 # Plot confusion matrix
+<<<<<<< HEAD
 def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='results', print_note='false'):
+=======
+def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='results'):
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path) / model_name
     plot_path.mkdir(parents=True, exist_ok=True)
 
     # Confusion matrix
+<<<<<<< HEAD
     print('\n########## MLCM ##########')
     cm, _ = mlcm.cm(y_test, y_pred)
     # cm = cm[:-1, :-1]
     target_names = np.array([*target_names, 'NoC'])
     print(target_names)
+=======
+    print('########## MLCM ##########')
+    cm, _ = mlcm.cm(y_test, y_pred)
+    # cm = cm[:-1, :-1]
+    target_names = np.array([*target_names, 'NoC'])
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
 
     # calculating the normal confusion matrix
     divide = cm.sum(axis=1, dtype='int64')
@@ -289,8 +311,11 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='r
     print(cm)
     print('Normalized confusion Matrix (%):')
     print(cm_norm)
+<<<<<<< HEAD
 
     return cm
+=======
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
 
 
 def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
@@ -396,6 +421,9 @@ def _plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='
 
     return fig_list
 
+<<<<<<< HEAD
 def save_dict():
 
     return
+=======
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f

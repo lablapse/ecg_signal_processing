@@ -35,19 +35,31 @@ def training(
     min_lr = 1e-6
 
     # Paths
+<<<<<<< HEAD
     model_path = f'results/{model_name}/model.h5'
     csv_path = f'results/{model_name}/history.csv'
     csv_path_parameter = f'results/{model_name}/parameter.csv'
+=======
+    # model_path = 'saved_models/weights-improvement-{epoch:02d}-{val_loss:.2f}.h5'
+    model_path = f'results/{model_name}/model.h5'
+    csv_path = f'results/{model_name}/history.csv'
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
 
     # Convert strings to Path type
     csv_path = pathlib.Path(csv_path)
     model_path = pathlib.Path(model_path)
+<<<<<<< HEAD
     csv_path_parameter = pathlib.Path(csv_path_parameter)
+=======
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
 
     # Make sure the files are saved in a folder that exists
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     model_path.parent.mkdir(parents=True, exist_ok=True)
+<<<<<<< HEAD
     csv_path_parameter.parent.mkdir(parents=True, exist_ok=True)
+=======
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
 
     # # Get sample weights
     # sample_weights_train = compute_sample_weight(
@@ -55,11 +67,19 @@ def training(
 
     # Callbacks
     callbacks = [
+<<<<<<< HEAD
         ReduceLROnPlateau(monitor=monitor, factor=factor, patience=patience_RLR, mode='min', min_lr=min_lr),
         # ReduceLROnPlateau(monitor=monitor, factor=factor,patience=patience_RLR, mode='auto', min_lr=learning_rate / 100),
         ModelCheckpoint(model_path, monitor=monitor, mode='auto', verbose=1, save_best_only=True),
         CSVLogger(csv_path, separator=",", append=True),
         EarlyStopping(monitor=monitor, mode='auto', verbose=1, patience=patience_ES),
+=======
+        ReduceLROnPlateau(monitor=monitor, factor=0.5, patience=10, mode='min', min_lr=1e-6),
+        # ReduceLROnPlateau(monitor=monitor, factor=0.1,patience=7, mode='auto', min_lr=learning_rate / 100),
+        ModelCheckpoint(model_path, monitor=monitor, mode='auto', verbose=1, save_best_only=True),
+        CSVLogger(csv_path, separator=",", append=True),
+        EarlyStopping(monitor=monitor, mode='auto', verbose=1, patience=15),
+>>>>>>> 083a4986551e4959738ffb2c024255737eaa003f
         # EarlyStopping(monitor=monitor, mode='auto', verbose=1, patience=9, min_delta=0.00001),
     ]
 
