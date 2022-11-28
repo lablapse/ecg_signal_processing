@@ -39,18 +39,20 @@ metadata.scp_codes = metadata.scp_codes.apply(lambda x: ast.literal_eval(x))
 meta_scp = pd.read_csv(path / 'scp_statements.csv', index_col=0)
 meta_scp = meta_scp[meta_scp.diagnostic == 1]
 
+# Ordem correta: NORM, STTC, CD, MI, HYP
+super_classes = ['NORM','STTC','CD','MI','HYP']
 
-diag_names = np.sort(meta_scp.diagnostic_class.unique()).astype(str)
-print(diag_names)
-subdiag_dict = dict(meta_scp.diagnostic_class)
+subdiag_dict = dict(meta_scp.diagnostic_class) # Key = subclasses, item = superclasses
 
 def simple_diagnostic(scp_codes):
-    vec = np.zeros(diag_names.size, dtype='int')
-    for key, item in scp_codes.items():
+    vec = np.zeros(len(super_classes), dtype='int')
+    # vec = np.zeros(diag_names.size, dtype='int')
+    for key, item in scp_codes.items(): # Key = code, item = probability
         if key in meta_scp.index:
             diag_class = subdiag_dict[key]
             if item >= 50:
-                vec[diag_names == diag_class] = 1
+                vec[super_classes.index(diag_class)] = 1
+                # vec[diag_names == diag_class] = 1
 
     # No diagnostic class present
     if vec.sum() == 0:
@@ -65,7 +67,7 @@ metadata = metadata.drop(np.where(metadata.diagnostic_superclass == '???')[0])
 
 # Load labels
 Y = metadata.diagnostic_superclass.values
-Y = np.array(Y.tolist())    # CD, HYP, MI, NORM, STTC
+Y = np.array(Y.tolist())    
 
 # Load raw ECG data
 X = load_data(metadata, path)
