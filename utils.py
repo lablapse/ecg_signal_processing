@@ -4,24 +4,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pathlib
-
-import tensorflow as tf
 from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
 from keras.models import Model
-
 import sklearn.metrics as skmetrics
-from mlcm import mlcm
-
+import mlcm
 import plot_utils as putils
-
-
-physical_devices = tf.config.list_physical_devices('GPU')
-try:
-    # tf.config.experimental.set_memory_growth(physical_devices[0], True)
-    pass
-except:
-    # Invalid device or cannot modify virtual devices once initialized.
-    pass
 
 # Rajpurkar model functions
 # Create residual blocks
@@ -75,7 +62,7 @@ def residual_blocks_ribeiro(input, num_filter=128, rate_drop=0, initializer='non
 
     return layer, skip
 
-# Get the models os the network
+# Get the models of the network
 def get_model(input_layer, model_name):
 
     if 'rajpurkar' in model_name:
@@ -181,7 +168,7 @@ def get_metrics(y_test, prediction, prediction_bin, target_names, model_name, cm
     csv_path_auc.parent.mkdir(parents=True, exist_ok=True)
 
     # Get the reports
-    report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names)
+    report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names, zero_division=1)
     report_mlcm = mlcm.stats(cm, False)
 
     # Save the reports
@@ -242,7 +229,7 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='r
     plot_path.mkdir(parents=True, exist_ok=True)
 
     # Confusion matrix
-    cm, _ = mlcm.cm(y_test, y_pred)
+    cm, _ = mlcm.cm(y_test, y_pred, print_note=False)
     target_names = np.array([*target_names, 'NoC'])
 
     # Calculating the normalization of the confusion matrix
@@ -295,3 +282,123 @@ def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
     fig.tight_layout()
 
     return fig, ax
+
+
+# ########################################################################### #
+# Developing a function to produce some statistics based on the MLCM  
+# ########################################################################### #
+def get_mlcm_metrics(conf_mat, print_binary_mat=False):
+    num_classes = conf_mat.shape[1]
+    tp = np.zeros(num_classes, dtype=np.int64)  
+    tn = np.zeros(num_classes, dtype=np.int64)  
+    fp = np.zeros(num_classes, dtype=np.int64)  
+    fn = np.zeros(num_classes, dtype=np.int64)  
+
+    precision = np.zeros(num_classes, dtype=float)  
+    recall = np.zeros(num_classes, dtype=float)  
+    f1_score = np.zeros(num_classes, dtype=float)  
+
+    # Calculating TP, TN, FP, FN from MLCM
+    for k in range(num_classes): 
+        tp[k] = conf_mat[k][k]
+        for i in range(num_classes):
+            if i != k:
+                tn[k] += conf_mat[i][i]
+                fp[k] += conf_mat[i][k]
+                fn[k] += conf_mat[k][i]
+
+    # Calculating precision, recall, and F1-score for each of classes
+    epsilon = 1e-7 # A small value to prevent division by zero
+    precision = tp / (tp + fp + epsilon)
+    recall = tp / (tp + fn + epsilon)
+    f1_score = 2 * tp / (2 * tp + fn + fp + 2 * epsilon)
+
+    divide = conf_mat.sum(axis=1, dtype='int64') # sum of each row of MLCM
+
+    if divide[-1] != 0: # some instances have not been assigned with any label 
+        micro_precision = tp.sum()/(tp.sum()+fp.sum())
+        macro_precision = precision.sum()/num_classes
+        weighted_precision = (precision*divide).sum()/divide.sum()
+
+        micro_recall = tp.sum()/(tp.sum()+fn.sum())
+        macro_recall = recall.sum()/num_classes
+        weighted_recall = (recall*divide).sum()/divide.sum()
+
+        micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
+        macro_f1 = f1_score.sum()/num_classes
+        weighted_f1 = (f1_score*divide).sum()/divide.sum()
+
+        print('\n       class#     precision        recall      f1-score\
+        weight\n')
+        sp = '        '
+        sp2 = '  '
+        total_weight = divide.sum()
+        float_formatter = "{:.2f}".format
+        for k in range(num_classes-1):
+            print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
+                  float_formatter(recall[k]), sp,float_formatter(f1_score[k]),\
+                  sp,divide[k])
+        k = num_classes-1
+        print(sp,' NTL',sp,float_formatter(precision[k]),sp, \
+              float_formatter(recall[k]), sp,float_formatter(f1_score[k]), \
+              sp,divide[k])
+
+        print('\n    micro avg',sp,float_formatter(micro_precision),sp, \
+              float_formatter(micro_recall),sp,float_formatter(micro_f1),\
+              sp,total_weight)
+        print('    macro avg',sp,float_formatter(macro_precision),sp,
+              float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
+              total_weight)
+        print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
+              float_formatter(weighted_recall),sp, \
+              float_formatter(weighted_f1),sp,total_weight)
+    else:
+        precision = precision[:-1]
+        recall = recall[:-1]
+        f1_score = f1_score[:-1]
+        divide = divide[:-1]
+        num_classes -= 1
+
+        micro_precision = tp.sum()/(tp.sum()+fp.sum())
+        macro_precision = precision.sum()/num_classes
+        weighted_precision = (precision*divide).sum()/divide.sum()
+
+        micro_recall = tp.sum()/(tp.sum()+fn.sum())
+        macro_recall = recall.sum()/num_classes
+        weighted_recall = (recall*divide).sum()/divide.sum()
+
+        micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
+        macro_f1 = f1_score.sum()/num_classes
+        weighted_f1 = (f1_score*divide).sum()/divide.sum()
+
+        print('\n       class#     precision        recall      f1-score\
+        weight\n')
+        sp = '        '
+        sp2 = '  '
+        total_weight = divide.sum()
+        float_formatter = "{:.2f}".format
+        for k in range(num_classes):
+            print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
+                  float_formatter(recall[k]), sp,\
+                  float_formatter(f1_score[k]),sp,divide[k])
+        print(sp,' NoC',sp,'There is not any data with no true-label assigned!')
+
+        print('\n    micro avg',sp,float_formatter(micro_precision),sp,\
+              float_formatter(micro_recall),sp,float_formatter(micro_f1),\
+              sp,total_weight)
+        print('    macro avg',sp,float_formatter(macro_precision),sp,\
+              float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
+              total_weight)
+        print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
+              float_formatter(weighted_recall),sp,\
+              float_formatter(weighted_f1),sp,total_weight)
+
+    # construct a dict to store values
+    d = {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn, 'precision': precision,\
+        'recall': recall, 'f1_score': f1_score, 'divide': divide,\
+        'micro_precision': micro_precision, 'macro_precision': macro_precision,\
+        'weighted_precision': weighted_precision, 'micro_recall': micro_recall,\
+        'macro_recall': macro_recall, 'weighted_recall': weighted_recall,\
+        'micro_f1': micro_f1, 'macro_f1': macro_f1, 'weighted_f1': weighted_f1}
+    
+    return d
