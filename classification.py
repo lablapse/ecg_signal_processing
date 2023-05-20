@@ -1,10 +1,11 @@
 # Python packages
-import numpy as np
-from keras.layers import Input
 from datetime import datetime
+from keras.layers import Input
+import mlcm
+import numpy as np
 
-import utils
 import train_model
+import utils
 
 # Load data
 # The dataset contains train, validation and test sets
@@ -53,7 +54,8 @@ prediction_bin = np.array(prediction)
 prediction_bin = (prediction > 0.5).astype('int')
 
 # Save results
-cm = utils.plot_confusion_matrix(y_test, prediction_bin, model_name, target_names)
+cm, _ = mlcm.cm(y_test, prediction_bin, print_note=False)
+utils.plot_confusion_matrix(cm, model_name, target_names)
 utils.get_metrics(y_test, prediction, prediction_bin, target_names, model_name, cm)
 # utils.plot_results(history, name=model_name, metric='loss')
 # utils.plot_results(history, name=model_name, metric='accuracy')

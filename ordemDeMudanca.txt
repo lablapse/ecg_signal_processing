@@ -1,0 +1,12 @@
+Esse arquivo dita a ordem de importância dos files desse repositório, 
+indicando a ordem de revisão/modificação adotada por Marafon.
+As modificações realizadas estarão seguidas por comentários de 
+''' ''' ao invés de #, além de conter os trechos de código modificados.
+Por mais que a informação esteja salva nos commits do git, a redundância
+de informação é conveniente.
+Caso não tenham comentários em ''' ''' é porque essa ideia não valeu a pena.
+
+1 - plot_utils.py
+2 - utils.py
+3 - train_model.py
+4 - classification.py

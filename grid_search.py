@@ -1,12 +1,12 @@
+import itertools
+from keras import backend as K # To clear gpu memory
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
+from keras.layers import Input
+from keras.models import load_model
+from keras.optimizers import SGD, RMSprop, Adam
 import numpy as np
 import pandas as pd
-import itertools
 import pathlib, os, gc # Garbage collector
-from keras.models import load_model
-from keras.layers import Input
-from keras.optimizers import SGD, RMSprop, Adam
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
-from keras import backend as K # To clear gpu memory
 import tensorflow as tf
 import utils, mlcm
 

@@ -2,7 +2,6 @@
 import keras
 from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
 from keras.models import Model
-import mlcm
 import matplotlib.pyplot as plt
 import numpy as np
 import pathlib
@@ -13,17 +12,28 @@ import sklearn.metrics as skmetrics
 
 # Rajpurkar model functions
 # Create residual blocks
-def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i=0, stride=1, 
-                              num_filter=64, rate_drop=0.5, initializer='none') -> keras.engine.keras_tensor.KerasTensor:
+def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i: int=0, stride: int=1, 
+                              num_filter: int=64, rate_drop: float=0.5, 
+                              initializer: str='none') -> keras.engine.keras_tensor.KerasTensor:
+    
+    layer = keras.Sequential([BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop),
+                              Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer),
+                              BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop),
+                              Conv1D(kernel_size=16, filters=num_filter, strides=stride, padding="same", kernel_initializer=initializer)]
+                              )(input)
 
-    layer = BatchNormalization()(input)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer)(layer)
-    layer = BatchNormalization()(layer)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=stride, padding="same", kernel_initializer=initializer)(layer)
+    # layer = BatchNormalization()(input)
+    # layer = ReLU()(layer)
+    # layer = Dropout(rate_drop)(layer)
+    # layer = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer)(layer)
+    # layer = BatchNormalization()(layer)
+    # layer = ReLU()(layer)
+    # layer = Dropout(rate_drop)(layer)
+    # layer = Conv1D(kernel_size=16, filters=num_filter, strides=stride, padding="same", kernel_initializer=initializer)(layer)
 
     #Short connection
     if i == 3 or i == 7 or i == 11:
@@ -35,40 +45,62 @@ def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i=0,
     # Adding layers
     return Add()([layer, skip])
 
-# Ribeiro's model functions
-# Create the skip connection A with MaxPooling and Conv layers
-def skip_connection(skip: keras.engine.keras_tensor.KerasTensor, num_filter=128, rate_drop=0, 
-                    initializer='none', downsample=1) -> keras.engine.keras_tensor.KerasTensor:
+# # Ribeiro's model functions
+# # Create the skip connection A with MaxPooling and Conv layers
+# '''argumento initializer não utilizado'''
+# def skip_connection(skip: keras.engine.keras_tensor.KerasTensor, num_filter=128, rate_drop=0, 
+#                     initializer='none', downsample=1) -> keras.engine.keras_tensor.KerasTensor:
     
-    skip = MaxPooling1D(pool_size=downsample,strides=downsample,padding='same')(skip)
-    skip = Conv1D(filters=num_filter,kernel_size=1,strides=1,padding='same')(skip)
+#     skip = MaxPooling1D(pool_size=downsample,strides=downsample,padding='same')(skip)
+#     skip = Conv1D(filters=num_filter,kernel_size=1,strides=1,padding='same')(skip)
+#     return skip
+
+def skip_connection(skip: keras.engine.keras_tensor.KerasTensor, num_filter: int=128, 
+                    downsample: int=1) -> keras.engine.keras_tensor.KerasTensor:
+    
+    skip = keras.Sequential([MaxPooling1D(pool_size=downsample,strides=downsample,padding='same'), 
+                            Conv1D(filters=num_filter,kernel_size=1,strides=1,padding='same')]
+                            )(skip)
     return skip
 
 # Create the residual blocks
-def residual_blocks_ribeiro(input: keras.engine.keras_tensor.KerasTensor, num_filter=128, 
-                            rate_drop=0, initializer='none', downsample=1) -> tuple:
+def residual_blocks_ribeiro(input: keras.engine.keras_tensor.KerasTensor, num_filter: int=128, 
+                            rate_drop: float=0, initializer: str='none', downsample: int=1) -> tuple:
 
     layer, skip = input
 
-    skip = skip_connection(skip, num_filter=num_filter, rate_drop=rate_drop, initializer=initializer, downsample=downsample)
+    skip = skip_connection(skip, num_filter=num_filter, downsample=downsample)
 
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer)(layer) 
-    layer = BatchNormalization()(layer)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=downsample, padding="same", kernel_initializer=initializer)(layer) 
+    layer = keras.Sequential([Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer),
+                              BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop),
+                              Conv1D(kernel_size=16, filters=num_filter, strides=downsample, padding="same", kernel_initializer=initializer)]
+                              )(layer)
+
+    # layer = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer)(layer) 
+    # layer = BatchNormalization()(layer)
+    # layer = ReLU()(layer)
+    # layer = Dropout(rate_drop)(layer)
+    # layer = Conv1D(kernel_size=16, filters=num_filter, strides=downsample, padding="same", kernel_initializer=initializer)(layer) 
 
     layer = Add()([layer, skip])
     skip = layer
 
-    layer = BatchNormalization()(layer)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
+    layer = keras.Sequential([BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop)]
+                              )(layer)
+
+    # layer = BatchNormalization()(layer)
+    # layer = ReLU()(layer)
+    # layer = Dropout(rate_drop)(layer)
 
     return layer, skip
 
 # Get the models of the network
-def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, model_name: str) -> keras.engine.functional.Functional:
+def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, 
+              model_name: str) -> keras.engine.functional.Functional:
 
     if 'rajpurkar' in model_name:
         rate_drop = 1 - 0.8
@@ -80,19 +112,32 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, model_name: st
         )
 
         # First block
-        layers = Conv1D(strides=1, **conv_config)(input_layer)
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
+        
+        layers = keras.Sequential([Conv1D(strides=1, **conv_config),
+                                   BatchNormalization(),
+                                   ReLU()]
+                                   )(input_layer)
+        
+        # layers = Conv1D(strides=1, **conv_config)(input_layer)
+        # layers = BatchNormalization()(layers)
+        # layers = ReLU()(layers)
 
         # Short connection
         skip = MaxPooling1D(pool_size=1, strides=2)(layers)
 
         # Second block
-        layers = Conv1D(strides=1, **conv_config)(layers)
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
-        layers = Dropout(rate_drop)(layers)
-        layers = Conv1D(strides=2, **conv_config)(layers)
+        layers = keras.Sequential([Conv1D(strides=1, **conv_config),
+                                   BatchNormalization(),
+                                   ReLU(),
+                                   Dropout(rate_drop),
+                                   Conv1D(strides=2, **conv_config)]
+                                   )(layers)
+        
+        # layers = Conv1D(strides=1, **conv_config)(layers)
+        # layers = BatchNormalization()(layers)
+        # layers = ReLU()(layers)
+        # layers = Dropout(rate_drop)(layers)
+        # layers = Conv1D(strides=2, **conv_config)(layers)
 
         # Adding layers
         layers = Add()([layers, skip])
@@ -111,10 +156,17 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, model_name: st
             )
 
         # Output block
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
-        layers = Flatten()(layers)
-        layers = Dense(32)(layers)
+        layers = keras.Sequential([BatchNormalization(),
+                                   ReLU(),
+                                   Flatten(),                  
+                                   Dense(32)]
+                                   )(layers)
+        
+        # layers = BatchNormalization()(layers)
+        # layers = ReLU()(layers)
+        # layers = Flatten()(layers)
+        # layers = Dense(32)(layers)
+        
         classification = Dense(5, activation='sigmoid')(layers)
     
     elif 'ribeiro' in model_name:
@@ -123,11 +175,17 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, model_name: st
         downsample = 4
 
         # Input block
-        layers = Conv1D(
-            kernel_size=16, filters=64, strides=1, padding="same", kernel_initializer=initializer
-        )(input_layer)  # Output_size = (1000, 64)
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
+        layers = keras.Sequential([Conv1D(kernel_size=16, filters=64, strides=1,
+                                          padding="same", kernel_initializer=initializer),
+                                   BatchNormalization(),
+                                   ReLU()]
+                                   )(input_layer)
+        
+        # layers = Conv1D(
+        #     kernel_size=16, filters=64, strides=1, padding="same", kernel_initializer=initializer
+        # )(input_layer)  # Output_size = (1000, 64)
+        # layers = BatchNormalization()(layers)
+        # layers = ReLU()(layers)
 
         num_filter = np.array([128, 192, 256, 320])
 
@@ -145,6 +203,7 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, model_name: st
         classification = Dense(5, activation='sigmoid',
                                kernel_initializer=initializer)(layer)
     else:
+        ''' FAZER ISSO USANDO RAISE ERROR -> retornar dois tipos diferentes na função me desagrada'''
         print('Wrong name')
         return
 
@@ -229,17 +288,41 @@ def get_cm_percent(cm: np.ndarray, total):
     return cm_perc
 '''
 
-# Plot confusion matrix
-''' TALVEZ TRANSFORMAR EM DUAS FUNÇÕES '''
-def plot_confusion_matrix(y_test: np.ndarray, y_pred: np.ndarray, model_name: str, 
-                          target_names: list, plot_path='results', print_note='false') -> np.ndarray:
+# # Plot confusion matrix
+# ''' TALVEZ TRANSFORMAR EM DUAS FUNÇÕES '''
+# def plot_confusion_matrix(y_test: np.ndarray, y_pred: np.ndarray, model_name: str, 
+#                           target_names: list, plot_path='results') -> np.ndarray:
+
+#     # Make sure the plot folder exists
+#     plot_path = pathlib.Path(plot_path) / model_name
+#     plot_path.mkdir(parents=True, exist_ok=True)
+
+#     # Confusion matrix
+#     cm, _ = mlcm.cm(y_test, y_pred, print_note=False)
+#     target_names = np.array([*target_names, 'NoC'])
+
+#     # Calculating the normalization of the confusion matrix
+#     divide = cm.sum(axis=1, dtype='int64')
+#     divide[divide == 0] = 1
+#     cm_norm = 100 * cm / divide[:, None]
+
+#     # Plot the confusion matrix
+#     fig, _ = plot_cm(cm_norm, target_names)
+#     name = f"{model_name.split('-')[0]}-cm"
+#     tight_kws = {'rect' : (0, 0, 1.1, 1)}
+#     putils.save_fig(fig, name, path=plot_path, figsize='square',
+#                     tight_scale='both', usetex=False, tight_kws=tight_kws)
+
+#     return cm
+
+def plot_confusion_matrix(cm: np.ndarray, model_name: str, 
+                          target_names: list, plot_path='results') -> np.ndarray:
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path) / model_name
     plot_path.mkdir(parents=True, exist_ok=True)
 
     # Confusion matrix
-    cm, _ = mlcm.cm(y_test, y_pred, print_note=False)
     target_names = np.array([*target_names, 'NoC'])
 
     # Calculating the normalization of the confusion matrix
@@ -248,18 +331,13 @@ def plot_confusion_matrix(y_test: np.ndarray, y_pred: np.ndarray, model_name: st
     cm_norm = 100 * cm / divide[:, None]
 
     # Plot the confusion matrix
-    fig, ax = plot_cm(cm_norm, target_names)
+    fig, _ = plot_cm(cm_norm, target_names)
     name = f"{model_name.split('-')[0]}-cm"
     tight_kws = {'rect' : (0, 0, 1.1, 1)}
     putils.save_fig(fig, name, path=plot_path, figsize='square',
                     tight_scale='both', usetex=False, tight_kws=tight_kws)
 
-    # print('Raw confusion Matrix:')
-    # print(cm)
-    # print('Normalized confusion Matrix (%):')
-    # print(cm_norm)
-
-    return cm
+    return
 
 
 def plot_cm(confusion_matrix: np.ndarray, class_names: list, fontsize=10, cmap='Blues') -> tuple:
@@ -293,11 +371,10 @@ def plot_cm(confusion_matrix: np.ndarray, class_names: list, fontsize=10, cmap='
 
     return fig, ax
 
-
 # ########################################################################### #
 # Developing a function to produce some statistics based on the MLCM  
 # ########################################################################### #
-def get_mlcm_metrics(conf_mat: np.ndarray, print_binary_mat=False) -> dict:
+def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
     num_classes = conf_mat.shape[1]
     tp = np.zeros(num_classes, dtype=np.int64)  
     tn = np.zeros(num_classes, dtype=np.int64)  
