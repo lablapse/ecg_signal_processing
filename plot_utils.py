@@ -10,14 +10,13 @@
 ## See https://matplotlib.org/users/customizing.html#the-matplotlibrc-file
 ## for more details on the paths which are checked for the configuration file.
 
-
-import pathlib
 from matplotlib.figure import Figure
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as mfont
 import matplotlib.colors as mcolors
+import numpy as np
+import pathlib
 
 mpl.rcParams['ps.papersize'] = 'auto'
 mpl.rcParams['ps.useafm'] = False
@@ -43,7 +42,7 @@ color_list = list(mcolors.TABLEAU_COLORS)
 def format_figure(
         fig: Figure, figsize='paper', times='Times New Roman', arial='Arial',
         tight_scale='x', custom=None, tight_kws=None
-):
+) -> Figure:
 
     # Assumes a single axis in figure (no support for plt.subplots)
     ax = fig.axes[0]
@@ -147,7 +146,7 @@ def format_figure(
     return fig
 
 
-def save_fig(fig, name, path=None, format=None, dpi=600, close=False, usetex=True, **kwargs):
+def save_fig(fig: Figure, name: str, path=None, format=None, dpi=600, close=False, usetex=True, **kwargs) -> Figure:
     # Make sure to save on a folder that exists
     if path is None:
         path = 'figures'

@@ -1,18 +1,20 @@
 # Python packages
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pathlib
+import keras
 from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
 from keras.models import Model
-import sklearn.metrics as skmetrics
 import mlcm
+import matplotlib.pyplot as plt
+import numpy as np
+import pathlib
 import plot_utils as putils
+import pandas as pd
+import seaborn as sns
+import sklearn.metrics as skmetrics
 
 # Rajpurkar model functions
 # Create residual blocks
-def residual_blocks_rajpurkar(input,i=0, stride=1, num_filter=64, rate_drop=0.5, initializer='none'):
+def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i=0, stride=1, 
+                              num_filter=64, rate_drop=0.5, initializer='none') -> keras.engine.keras_tensor.KerasTensor:
 
     layer = BatchNormalization()(input)
     layer = ReLU()(layer)
@@ -35,13 +37,16 @@ def residual_blocks_rajpurkar(input,i=0, stride=1, num_filter=64, rate_drop=0.5,
 
 # Ribeiro's model functions
 # Create the skip connection A with MaxPooling and Conv layers
-def skip_connection(skip, num_filter=128, rate_drop=0, initializer='none', downsample=1):
+def skip_connection(skip: keras.engine.keras_tensor.KerasTensor, num_filter=128, rate_drop=0, 
+                    initializer='none', downsample=1) -> keras.engine.keras_tensor.KerasTensor:
+    
     skip = MaxPooling1D(pool_size=downsample,strides=downsample,padding='same')(skip)
     skip = Conv1D(filters=num_filter,kernel_size=1,strides=1,padding='same')(skip)
     return skip
 
 # Create the residual blocks
-def residual_blocks_ribeiro(input, num_filter=128, rate_drop=0, initializer='none', downsample=1):
+def residual_blocks_ribeiro(input: keras.engine.keras_tensor.KerasTensor, num_filter=128, 
+                            rate_drop=0, initializer='none', downsample=1) -> tuple:
 
     layer, skip = input
 
@@ -63,7 +68,7 @@ def residual_blocks_ribeiro(input, num_filter=128, rate_drop=0, initializer='non
     return layer, skip
 
 # Get the models of the network
-def get_model(input_layer, model_name):
+def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, model_name: str) -> keras.engine.functional.Functional:
 
     if 'rajpurkar' in model_name:
         rate_drop = 1 - 0.8
@@ -150,26 +155,27 @@ def get_model(input_layer, model_name):
 
 
 # Get the metrics
-def get_metrics(y_test, prediction, prediction_bin, target_names, model_name, cm):
+def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.ndarray, 
+                target_names: list, model_name: str, cm: np.ndarray) -> None:
 
     # Path
     csv_report = f'results/{model_name}/report.csv'
-    csv_report_mlcm = f'results/{model_name}/report_mlcm.csv'
     csv_path_auc = f'results/{model_name}/roc_auc.csv'
+    # csv_report_mlcm = f'results/{model_name}/report_mlcm.csv'
     
     # Convert strings to Path type
     csv_report = pathlib.Path(csv_report)
-    csv_report_mlcm = pathlib.Path(csv_report_mlcm)
     csv_path_auc = pathlib.Path(csv_path_auc)
+    # csv_report_mlcm = pathlib.Path(csv_report_mlcm)
 
     # Make sure the files are saved in a folder that exists
     csv_report.parent.mkdir(parents=True, exist_ok=True)
-    csv_report_mlcm.parent.mkdir(parents=True, exist_ok=True)
     csv_path_auc.parent.mkdir(parents=True, exist_ok=True)
+    # csv_report_mlcm.parent.mkdir(parents=True, exist_ok=True)
 
     # Get the reports
     report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names, zero_division=1)
-    report_mlcm = mlcm.stats(cm, False)
+    # report_mlcm = mlcm.stats(cm, False)
 
     # Save the reports
     pd.DataFrame.from_dict(report, orient='index').to_csv(csv_report)
@@ -190,7 +196,7 @@ def get_metrics(y_test, prediction, prediction_bin, target_names, model_name, cm
     return
 
 # Plot results
-def plot_results(history, name, metric, plot_path='plots'):
+def plot_results(history, name: str, metric: str, plot_path='plots') -> None:
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path)
@@ -212,17 +218,21 @@ def plot_results(history, name, metric, plot_path='plots'):
 
     return
 
+''' Função não utilizada em lugar algum
 # Transform the values in the confusion matrix in percentage
-def get_cm_percent(cm, total):
+def get_cm_percent(cm: np.ndarray, total):
     cm_perc = np.zeros_like(cm, dtype='float')
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
             for k in range(cm.shape[2]):
                 cm_perc[i][j][k] = round((cm[i][j][k] / total) * 100, 2)
     return cm_perc
+'''
 
 # Plot confusion matrix
-def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='results', print_note='false'):
+''' TALVEZ TRANSFORMAR EM DUAS FUNÇÕES '''
+def plot_confusion_matrix(y_test: np.ndarray, y_pred: np.ndarray, model_name: str, 
+                          target_names: list, plot_path='results', print_note='false') -> np.ndarray:
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path) / model_name
@@ -252,7 +262,7 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='r
     return cm
 
 
-def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
+def plot_cm(confusion_matrix: np.ndarray, class_names: list, fontsize=10, cmap='Blues') -> tuple:
 
     # Plot the confusion matrix
     fig, ax = plt.subplots()
@@ -287,7 +297,7 @@ def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
 # ########################################################################### #
 # Developing a function to produce some statistics based on the MLCM  
 # ########################################################################### #
-def get_mlcm_metrics(conf_mat, print_binary_mat=False):
+def get_mlcm_metrics(conf_mat: np.ndarray, print_binary_mat=False) -> dict:
     num_classes = conf_mat.shape[1]
     tp = np.zeros(num_classes, dtype=np.int64)  
     tn = np.zeros(num_classes, dtype=np.int64)  

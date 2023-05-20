@@ -24,8 +24,8 @@ y_test = data['y_test']
 target_names = ['NORM', 'STTC', 'CD', 'MI', 'HYP']
 
 # Get the model
-model_name = 'rajpurkar'
-# model_name = 'ribeiro'
+# model_name = 'rajpurkar'
+model_name = 'ribeiro'
 
 # Save the model name with the data and time
 timestamp = datetime.now().isoformat()

@@ -1,16 +1,18 @@
 # Python packages
+import keras
 import keras.optimizers as kopt
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
+import numpy as np
 import pandas as pd
 import pathlib
 
 # Train the model
 def training(
-    model,
-    X_train, y_train,
-    X_val, y_val,
-    model_name,
-    save_parameters,
+    model: keras.engine.functional.Functional,
+    X_train: np.ndarray, y_train: np.ndarray,
+    X_val: np.ndarray, y_val: np.ndarray,
+    model_name: str,
+    save_parameters: bool,
     learning_rate=0.1,
     epochs=100,
     ):
