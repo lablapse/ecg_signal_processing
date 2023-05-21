@@ -40,8 +40,8 @@ color_list = list(mcolors.TABLEAU_COLORS)
 # 9cm x 4.5cm (paper)
 # 16cm x 10cm (square)
 def format_figure(
-        fig: Figure, figsize='paper', times='Times New Roman', arial='Arial',
-        tight_scale='x', custom=None, tight_kws=None
+        fig: Figure, figsize: str='paper', times: str='Times New Roman', arial: str='Arial',
+        tight_scale: str='x', custom=None, tight_kws=None
 ) -> Figure:
 
     # Assumes a single axis in figure (no support for plt.subplots)
@@ -146,7 +146,7 @@ def format_figure(
     return fig
 
 
-def save_fig(fig: Figure, name: str, path=None, format=None, dpi=600, close=False, usetex=True, **kwargs) -> Figure:
+def save_fig(fig: Figure, name: str, path: str=None, format: str=None, dpi: int=600, close: bool=False, usetex: bool=True, **kwargs) -> Figure:
     # Make sure to save on a folder that exists
     if path is None:
         path = 'figures'
