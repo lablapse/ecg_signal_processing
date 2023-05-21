@@ -10,11 +10,11 @@
 ## See https://matplotlib.org/users/customizing.html#the-matplotlibrc-file
 ## for more details on the paths which are checked for the configuration file.
 
-from matplotlib.figure import Figure
 import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as mfont
 import matplotlib.colors as mcolors
+from matplotlib.figure import Figure
+import matplotlib.font_manager as mfont
+import matplotlib.pyplot as plt
 import numpy as np
 import pathlib
 
