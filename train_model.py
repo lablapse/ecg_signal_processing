@@ -65,7 +65,7 @@ def training(
     )
 
     # Save the parameters
-    parameters = { 
+    parameters = {
         'loss' : loss, 'optimizer' : optimizer, 'learning rate' : learning_rate,
         'epochs' : epochs, 'batch size' : batch_size, 'factor' : factor, 
         'patience RLR' : patience_RLR, 'patience ES': patience_ES, 'min LR' : min_lr

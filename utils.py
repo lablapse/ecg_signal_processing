@@ -87,7 +87,6 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor,
         )
 
         # First block
-        
         layers = keras.Sequential([Conv1D(strides=1, **conv_config),
                                    BatchNormalization(),
                                    ReLU()]
@@ -157,7 +156,7 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor,
         classification = Dense(5, activation='sigmoid',
                                kernel_initializer=initializer)(layer)
     else:
-        raise NameError("Wrong Name. Allowed names are 'rajpurkar' and 'ribeiro'")
+        raise NameError(" Wrong Name. Allowed names are 'rajpurkar' and 'ribeiro'. ")
 
     # Constructing the model
     model = Model(inputs=input_layer, outputs=classification)
@@ -167,7 +166,7 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor,
 
 # Get the metrics
 def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.ndarray, 
-                target_names: list, model_name: str, cm: np.ndarray) -> None:
+                target_names: list, model_name: str) -> None:
 
     # Path
     csv_report = f'results/{model_name}/report.csv'
@@ -229,7 +228,7 @@ def plot_results(history, name: str, metric: str, plot_path='plots') -> None:
 
 # This function plots the normalized confusion matrix from mlcm
 def plot_confusion_matrix(cm: np.ndarray, model_name: str, 
-                          target_names: list, plot_path='results') -> np.ndarray:
+                          target_names: list, plot_path='results') -> None:
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path) / model_name
