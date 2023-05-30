@@ -29,8 +29,10 @@ def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i: i
 
     #Short connection
     if i == 3 or i == 7 or i == 11:
-        layer_aj = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same")(input)
-        skip = MaxPooling1D(pool_size = 1, strides=2)(layer_aj)
+        # layer_aj = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same")(input)
+        # skip = MaxPooling1D(pool_size = 1, strides=2)(layer_aj)
+        skip = keras.Sequential([Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same"),
+                                 MaxPooling1D(pool_size = 1, strides=2)])(input)
     else:
         skip = MaxPooling1D(pool_size = 1, strides=stride)(input)
 
@@ -164,9 +166,11 @@ def get_model(input_layer: keras.engine.keras_tensor.KerasTensor,
     return model
 
 
-# Get the metrics
+# Get the metrics Linha 168 ta abaixo
 def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.ndarray, 
                 target_names: list, model_name: str) -> None:
+
+    support = np.sum(y_test, axis=0)
 
     # Path
     csv_report = f'results/{model_name}/report.csv'
@@ -199,7 +203,13 @@ def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.n
     }
     pd.DataFrame.from_dict(data=auc_dict, orient='index').to_csv(csv_path_auc, header=False)
 
-    return
+    return # Essa é a linha 202
+
+
+# def report_from_mlcm(d, support, target_names):
+#     report = {}
+#     for label in target_names:
+#         report[label] = 
 
 
 # Plot results
@@ -327,7 +337,7 @@ def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
         micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
-
+        #### 331 é a de baixo ####
         print('\n       class#     precision        recall      f1-score\
         weight\n')
         sp = '        '
@@ -351,7 +361,7 @@ def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
               total_weight)
         print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
               float_formatter(weighted_recall),sp, \
-              float_formatter(weighted_f1),sp,total_weight)
+              float_formatter(weighted_f1),sp,total_weight) #### 354 é essa ####
     else:
         precision = precision[:-1]
         recall = recall[:-1]
@@ -370,7 +380,7 @@ def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
         micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
-
+        #### 374 é a de baixo ####
         print('\n       class#     precision        recall      f1-score\
         weight\n')
         sp = '        '
@@ -391,7 +401,7 @@ def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
               total_weight)
         print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
               float_formatter(weighted_recall),sp,\
-              float_formatter(weighted_f1),sp,total_weight)
+              float_formatter(weighted_f1),sp,total_weight) #### 394 é essa ####
 
     # construct a dict to store values
     d = {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn, 'precision': precision,\

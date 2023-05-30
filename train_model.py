@@ -1,6 +1,6 @@
 # Python packages
 import keras
-# import keras.optimizers as kopt
+import keras.optimizers as kopt
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
 import numpy as np
 import pandas as pd
@@ -15,19 +15,13 @@ def training(
     model_name: str,
     save_parameters: bool,
     learning_rate=0.1,
-    epochs=100, factor=0.5, patience_RLR=10, patience_ES=15, min_lr=1e-6, loss='binary_crossentropy', batch_size=256, monitor = 'val_loss'
+    epochs=1, factor=0.5, patience_RLR=10,
+    patience_ES=15, min_lr=1e-6, loss='binary_crossentropy',
+    batch_size=256, monitor = 'val_loss'
     ):
 
     # Parameters
-    # loss = 'binary_crossentropy'
-    optimizer = keras.optimizers.kopt.Adam(learning_rate)
-    # batch_size = 256
-    # monitor = 'val_loss'
-    # Callbacks parameters
-    # factor = 0.5
-    # patience_RLR = 10
-    # patience_ES = 15
-    # min_lr = 1e-6
+    optimizer = kopt.Adam(learning_rate) # nao da de mudar por keras.optimizers.kopt.Adam pois da erro. Acontece com outros modulos do Keras tbm.
 
     # Paths
     model_path = f'results/{model_name}/model.h5'
