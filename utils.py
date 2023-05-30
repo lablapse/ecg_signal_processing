@@ -181,7 +181,7 @@ def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.n
     csv_path_auc.parent.mkdir(parents=True, exist_ok=True)
 
     # Get the reports
-    report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names, zero_division=1)
+    report = skmetrics.classification_report(y_test, prediction_bin, output_dict=True, target_names=target_names, zero_division=1)
 
     # Save the reports
     pd.DataFrame.from_dict(report, orient='index').to_csv(csv_report)
@@ -284,9 +284,9 @@ def plot_cm(confusion_matrix: np.ndarray, class_names: list, fontsize=10, cmap='
     return fig
 
 
-# ########################################################################### #
-# Developing a function to produce some statistics based on the MLCM  
-# ########################################################################### #
+
+
+
 def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
     num_classes = conf_mat.shape[1]
     tp = np.zeros(num_classes, dtype=np.int64)  

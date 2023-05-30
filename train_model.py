@@ -1,6 +1,6 @@
 # Python packages
 import keras
-import keras.optimizers as kopt
+# import keras.optimizers as kopt
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
 import numpy as np
 import pandas as pd
@@ -15,19 +15,19 @@ def training(
     model_name: str,
     save_parameters: bool,
     learning_rate=0.1,
-    epochs=100,
+    epochs=100, factor=0.5, patience_RLR=10, patience_ES=15, min_lr=1e-6, loss='binary_crossentropy', batch_size=256, monitor = 'val_loss'
     ):
 
     # Parameters
-    loss = 'binary_crossentropy'
-    optimizer = kopt.Adam(learning_rate)
-    batch_size = 256
-    monitor = 'val_loss'
+    # loss = 'binary_crossentropy'
+    optimizer = keras.optimizers.kopt.Adam(learning_rate)
+    # batch_size = 256
+    # monitor = 'val_loss'
     # Callbacks parameters
-    factor = 0.5
-    patience_RLR = 10
-    patience_ES = 15
-    min_lr = 1e-6
+    # factor = 0.5
+    # patience_RLR = 10
+    # patience_ES = 15
+    # min_lr = 1e-6
 
     # Paths
     model_path = f'results/{model_name}/model.h5'
@@ -56,7 +56,7 @@ def training(
     model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
     # Training the model
-    print('Batch Size:', batch_size)
+
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
@@ -65,12 +65,12 @@ def training(
     )
 
     # Save the parameters
-    parameters = {
-        'loss' : loss, 'optimizer' : optimizer, 'learning rate' : learning_rate,
-        'epochs' : epochs, 'batch size' : batch_size, 'factor' : factor, 
-        'patience RLR' : patience_RLR, 'patience ES': patience_ES, 'min LR' : min_lr
-    }
     if save_parameters == True:
+        parameters = {
+            'loss' : loss, 'optimizer' : optimizer, 'learning rate' : learning_rate,
+            'epochs' : epochs, 'batch size' : batch_size, 'factor' : factor, 
+            'patience RLR' : patience_RLR, 'patience ES': patience_ES, 'min LR' : min_lr
+        }
         pd.DataFrame.from_dict(data=parameters, orient='index').to_csv(csv_path_parameter, header=False)
 
     return history

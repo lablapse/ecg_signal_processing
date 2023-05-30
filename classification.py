@@ -39,8 +39,8 @@ model.summary()
 
 # Train the model
 history = train_model.training(model, X_train, y_train, X_val, y_val, model_name, save_parameters=True)
-# print(history.params)
-# print(model_name)
+
+
 
 # Evaluate the model
 score = model.evaluate(X_test, y_test)
@@ -50,12 +50,12 @@ print(f"Acurácia de teste = {100*score[1]:.2f}%")
 # Prediction of the model
 prediction = model.predict(X_test)
 # Convert the predictions to binary values
-prediction_bin = np.array(prediction)
+# prediction_bin = np.array(prediction)
 prediction_bin = (prediction > 0.5).astype('int')
 
 # Save results
 cm, _ = mlcm.cm(y_test, prediction_bin, print_note=False)
 utils.plot_confusion_matrix(cm, model_name, target_names)
-utils.get_metrics(y_test, prediction, prediction_bin, target_names, model_name)
+# utils.get_metrics(y_test, prediction, prediction_bin, target_names, model_name)
 # utils.plot_results(history, name=model_name, metric='loss')
 # utils.plot_results(history, name=model_name, metric='accuracy')

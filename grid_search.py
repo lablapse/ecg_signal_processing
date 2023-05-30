@@ -145,6 +145,9 @@ combinations = itertools.product(parameters['batch_size'],\
 # Filter the combinations to get the remaining ones
 remaining_combinations = filter_combinations(csv_file_path, combinations)
 
+# if not remaining_combinations:
+#     remaining_combinations = combinations
+
 for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combinations:
 
     # Clear GPU memory and reset Keras Session
