@@ -4,20 +4,24 @@ import pandas as pd
 
 # Load the csv file
 df = pd.read_csv('grid_search_results.csv')
+
 # Drop columns that are not needed
 columns_to_drop = ['index', 'train_loss', 'train_accuracy', 'train_precision_macro_avg',\
                     'train_recall_macro_avg', 'train_f1_score_macro_avg','val_loss',\
                     'val_accuracy','val_precision_macro_avg', 'val_recall_macro_avg']
+
 df.drop(columns=columns_to_drop, axis=1, inplace=True)
 
 # Exhibit the first 10 rows
 df.head(10)
 
 def plot_f1_score_by_batch_size(df, model, learning_rates):
+    
     # Set up subplots
     fig, axes = plt.subplots(nrows=len(learning_rates), ncols=1, figsize=(9, 4.5), sharey=True)  
     fig.subplots_adjust(wspace=.3, hspace=.3, top=0.9, bottom=0.1, left=0.1, right=0.9)
     grayscale_colors = ['0.2', '0.5', '0.8']
+    
     for idx, lr in enumerate(learning_rates):
         ax = axes[idx]
 
@@ -43,6 +47,7 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
         ax.set_xticks(x + width, group_by)
         ax.set_xticklabels(group_by)
         ax.set_ylim(0, 1)
+        
         # Add text with the learning rate at the upper left corner of each subplot
         ax.text(0.005, 1, f'$\mu$={lr}', ha='left', va='top', transform=ax.transAxes)       
 
@@ -50,14 +55,17 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
     fig.text(0.5, 0.02, 'Batch size', ha='center', va='center')
     fig.text(0.04, 0.5, 'F1-score (validation)', ha='center', va='center', rotation='vertical')
     fig.text(0.03, .98, model.upper(), ha='left', va='top')
+    
     # Add the legend below the subplots
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, ['Adam', 'RMSProp', 'SGD'], loc='upper center',\
                ncol=len(data), bbox_to_anchor=(0.5, 1.0), edgecolor='none', facecolor='none')
+    
     plt.show()
 
 # Extract unique values for plotting
 learning_rates = np.unique(df['learning_rate'])
 models = np.unique(df['model_name'])
+
 for model in models:
     plot_f1_score_by_batch_size(df, model, learning_rates)

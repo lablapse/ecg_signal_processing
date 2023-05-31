@@ -5,6 +5,14 @@ import pathlib
 import tqdm
 import wfdb
 
+'''
+    This script collects the information in the PTB-XL database and separate in 'train', 'validation' and 'test' information.
+    Train dataset - folds 1 to 8;
+    Validation dataset - fold 9;
+    Test dataset - fold 10;
+    
+    The PTB-XL was manipulated to rule out diagnoses with less than 50% certainty.
+'''
 
 def load_data(df, data_folder):
     
@@ -36,12 +44,12 @@ def load_data(df, data_folder):
 
     return data
 
-path = '/home/datasets/ptbxl'
-path = pathlib.Path(path)
-sampling_rate = 100
+path = '/home/datasets/ptbxl' # path to the PTB-XL database
+path = pathlib.Path(path) # creating the pathlib.PosixPathvariable to be passed to the load_data function
+sampling_rate = 100 # selecting the sampling rate from the PTB-XL database. The other option would be 500 Hz
 
 # Load and convert annotation data
-metadata = pd.read_csv(path / 'ptbxl_database.csv')
+metadata = pd.read_csv(path / 'ptbxl_database.csv') 
 metadata.scp_codes = metadata.scp_codes.apply(lambda x: ast.literal_eval(x))
 
 # Load scp_statements.csv for diagnostic aggregation
