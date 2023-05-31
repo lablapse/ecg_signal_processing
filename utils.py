@@ -1,5 +1,7 @@
 # Python packages
+import gc # Garbage collector
 import keras
+from keras import backend as K # To clear gpu memory
 from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
 from keras.models import Model
 from matplotlib.figure import Figure
@@ -10,6 +12,7 @@ import plot_utils as putils
 import pandas as pd
 import seaborn as sns
 import sklearn.metrics as skmetrics
+import tensorflow as tf
 
 # Rajpurkar model functions
 # Create residual blocks
@@ -412,3 +415,55 @@ def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
         'micro_f1': micro_f1, 'macro_f1': macro_f1, 'weighted_f1': weighted_f1}
     
     return d
+
+
+def reset_keras():
+    """
+    Reset Keras session and clear GPU memory.
+    """
+    session = K.get_session()
+    if session:
+        session.close()
+
+    K.clear_session()
+    tf.compat.v1.reset_default_graph()
+    try:
+        del model, loaded_model, history # this is from global space - change this as you need
+    except:
+        pass
+
+    gc.collect() # if it's done something you should see a number being outputted
+
+    # Create a new interactive session
+    config = tf.compat.v1.ConfigProto()
+    # Enable dynamic memory allocation
+    config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 1
+    config.gpu_options.visible_device_list = '0'
+    session = tf.compat.v1.InteractiveSession(config=config)
+
+def load_data():
+    """
+    Load data from the 'data.npz' file.
+
+    Returns:
+        X_train, y_train, X_val, y_val: numpy arrays of train and validation data
+    """
+    with np.load('data.npz') as data:
+        X_train = data['X_train']
+        y_train = data['y_train']
+        X_val = data['X_val']
+        y_val = data['y_val']
+    return X_train, y_train, X_val, y_val
+
+# def data_manipulations(data, batch_size):
+#     datasets = []
+#     for dataset in data:
+#         datasets.append(tf.data.Dataset.from_tensor_slices((dataset[0], dataset[1])).shuffle(len(dataset[0])))
+
+#     for dataset in datasets:
+#         dataset = dataset.batch(batch_size).prefetch(1)
+
+#     # Prepare the data
+#     train_dataset = train_dataset.batch(batch_size).prefetch(1) # 1 batch is prepared while the other is being trained
+#     val_dataset = val_dataset.batch(batch_size).prefetch(1)     # 1 batch is prepared while the other is being trained

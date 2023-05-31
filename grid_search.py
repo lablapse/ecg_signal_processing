@@ -1,56 +1,13 @@
 import itertools
-from keras import backend as K # To clear gpu memory
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
 from keras.layers import Input
 from keras.models import load_model
 from keras.optimizers import SGD, RMSprop, Adam
 import numpy as np
 import pandas as pd
-import pathlib, os, gc # Garbage collector
+import pathlib, os
 import tensorflow as tf
 import utils, mlcm
-
-
-def reset_keras():
-    """
-    Reset Keras session and clear GPU memory.
-    """
-    session = K.get_session()
-    if session:
-        session.close()
-
-    K.clear_session()
-    tf.compat.v1.reset_default_graph()
-    try:
-        del model, loaded_model, history # this is from global space - change this as you need
-    except:
-        pass
-
-    gc.collect() # if it's done something you should see a number being outputted
-
-    # Create a new interactive session
-    config = tf.compat.v1.ConfigProto()
-    # Enable dynamic memory allocation
-    config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = 1
-    config.gpu_options.visible_device_list = '0'
-    session = tf.compat.v1.InteractiveSession(config=config)
-
-
-def load_data():
-    """
-    Load data from the 'data.npz' file.
-
-    Returns:
-        X_train, y_train, X_val, y_val: numpy arrays of train and validation data
-    """
-    with np.load('data.npz') as data:
-        X_train = data['X_train']
-        y_train = data['y_train']
-        X_val = data['X_val']
-        y_val = data['y_val']
-    return X_train, y_train, X_val, y_val
-
 
 def create_model(model_name, input_shape, optimizer, learning_rate):
     """
@@ -125,7 +82,7 @@ def filter_combinations(file_path, combinations):
 
 
 # Load data
-X_train, y_train, X_val, y_val = load_data()
+X_train, y_train, X_val, y_val = utils.load_data()
 
 # Grid Search Parameters and CSV file path
 parameters = {
@@ -153,7 +110,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     # Clear GPU memory and reset Keras Session
     print('######################################################################################')
     print('Resetting Keras Session...')
-    reset_keras()
+    utils.reset_keras()
 
     # Showing current parameters
     print('######################################################################################')
