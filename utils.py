@@ -16,9 +16,23 @@ import tensorflow as tf
 
 # Rajpurkar model functions
 # Create residual blocks
-def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i: int=0, stride: int=1, 
-                              num_filter: int=64, rate_drop: float=0.5, 
-                              initializer: str='none') -> keras.engine.keras_tensor.KerasTensor:
+def residual_blocks_rajpurkar(input, i=0, stride=1, 
+                              num_filter=64, rate_drop=0.5, 
+                              initializer='none'):
+    '''
+    This function creates the residual block for the Rajpurkar architecture
+    
+    inputs:
+        input: keras.engine.keras_tensor.KerasTensor;
+        i: int;
+        stride: int;
+        num_filter: int;
+        rate_drop: float;
+        initializer: str -> kernel_initializer for the kernel_initializer in Conv1D;
+        
+    return:
+        skip: keras.engine.keras_tensor.KerasTensor;
+    '''
     
     layer = keras.Sequential([BatchNormalization(),
                               ReLU(),
@@ -32,8 +46,6 @@ def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i: i
 
     #Short connection
     if i == 3 or i == 7 or i == 11:
-        # layer_aj = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same")(input)
-        # skip = MaxPooling1D(pool_size = 1, strides=2)(layer_aj)
         skip = keras.Sequential([Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same"),
                                  MaxPooling1D(pool_size = 1, strides=2)])(input)
     else:
@@ -43,8 +55,17 @@ def residual_blocks_rajpurkar(input: keras.engine.keras_tensor.KerasTensor, i: i
     return Add()([layer, skip])
 
 
-def skip_connection(skip: keras.engine.keras_tensor.KerasTensor, num_filter: int=128, 
-                    downsample: int=1) -> keras.engine.keras_tensor.KerasTensor:
+def skip_connection(skip, num_filter=128, downsample=1):
+    
+    '''
+    inputs:
+        skip: keras.engine.keras_tensor.KerasTensor;
+        num_filter: int;
+        downsample: int;
+        
+    return: keras.engine.keras_tensor.KerasTensor
+
+    '''
     
     skip = keras.Sequential([MaxPooling1D(pool_size=downsample,strides=downsample,padding='same'), 
                             Conv1D(filters=num_filter,kernel_size=1,strides=1,padding='same')]
@@ -53,8 +74,20 @@ def skip_connection(skip: keras.engine.keras_tensor.KerasTensor, num_filter: int
 
 
 # Create the residual blocks
-def residual_blocks_ribeiro(input: keras.engine.keras_tensor.KerasTensor, num_filter: int=128, 
-                            rate_drop: float=0, initializer: str='none', downsample: int=1) -> tuple:
+def residual_blocks_ribeiro(input, num_filter=128, 
+                            rate_drop=0, initializer='none', downsample=1):
+
+    '''
+    inputs:
+        input: keras.engine.keras_tensor.KerasTensor;
+        num_filter: int;
+        rate_drop: float;
+        initializer: str -> kernel_initializer for the kernel_initializer in Conv1D;
+        downsample: int;
+        
+    return:
+        layer, skip: a tuple of two keras.engine.keras_tensor.KerasTensor
+    '''
 
     layer, skip = input
 
@@ -79,8 +112,16 @@ def residual_blocks_ribeiro(input: keras.engine.keras_tensor.KerasTensor, num_fi
 
 
 # Get the models of the network
-def get_model(input_layer: keras.engine.keras_tensor.KerasTensor, 
-              model_name: str) -> keras.engine.functional.Functional:
+def get_model(input_layer, model_name):
+
+    '''
+    inputs:
+        input: keras.engine.keras_tensor.KerasTensor;
+        model_name: str -> selecting between 'rajpurkar' and 'ribeiro' architecture;
+        
+    return:
+        model: keras.engine.functional.Functional;
+    '''
 
     if 'rajpurkar' in model_name:
         rate_drop = 1 - 0.8
@@ -210,13 +251,20 @@ def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.n
 
 
 # def report_from_mlcm(d, support, target_names):
-#     report = {}
-#     for label in target_names:
-#         report[label] = 
 
 
 # Plot results
-def plot_results(history, name: str, metric: str, plot_path='plots') -> None:
+def plot_results(history, name, metric, plot_path='plots'):
+
+    '''
+    inputs:
+        history; name: str;
+        metric: str;
+        plot_path:str;
+        
+    return:
+        This function returns nothing
+    '''
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path)
@@ -243,6 +291,17 @@ def plot_results(history, name: str, metric: str, plot_path='plots') -> None:
 def plot_confusion_matrix(cm: np.ndarray, model_name: str, 
                           target_names: list, plot_path='results') -> None:
 
+    '''
+    inputs:
+        cm: np.ndarray; 
+        model_name: str; 
+        target_names: list;
+        plot_path: str;
+        
+    return:
+        This function returns nothing
+    '''
+
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path) / model_name
     plot_path.mkdir(parents=True, exist_ok=True)
@@ -265,7 +324,18 @@ def plot_confusion_matrix(cm: np.ndarray, model_name: str,
     return
 
 
-def plot_cm(confusion_matrix: np.ndarray, class_names: list, fontsize=10, cmap='Blues') -> Figure:
+def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
+
+    '''
+    inputs:
+        confusion_matrix: np.ndarray; 
+        class_names: list;
+        fontsize:int; 
+        cmap: str;
+        
+    return:
+        fig: Figure;
+    '''
 
     # Plot the confusion matrix
     fig, ax = plt.subplots()
@@ -295,9 +365,6 @@ def plot_cm(confusion_matrix: np.ndarray, class_names: list, fontsize=10, cmap='
     fig.tight_layout()
 
     return fig
-
-
-
 
 
 def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
@@ -442,19 +509,30 @@ def reset_keras():
     config.gpu_options.visible_device_list = '0'
     session = tf.compat.v1.InteractiveSession(config=config)
 
-def load_data():
+def load_data(test=False):
     """
     Load data from the 'data.npz' file.
 
+    inputs:
+        test: boolean;
+
     Returns:
-        X_train, y_train, X_val, y_val: numpy arrays of train and validation data
+        X_train, y_train, X_val, y_val: list of train and validation data if test=False;
+        X_train, y_train, X_val, y_val, X_test, y_test: list of train, validation and test data if test=True;
+        
+        The values in the returned list are numpy.ndarray type
     """
+    info = []
     with np.load('data.npz') as data:
-        X_train = data['X_train']
-        y_train = data['y_train']
-        X_val = data['X_val']
-        y_val = data['y_val']
-    return X_train, y_train, X_val, y_val
+        info.append(data['X_train'])
+        info.append(data['y_train'])
+        info.append(data['X_val'])
+        info.append(data['y_val'])
+        if test:
+            info.append(data['X_test'])
+            info.append(data['y_test'])
+            
+    return info
 
 # def data_manipulations(data, batch_size):
 #     datasets = []

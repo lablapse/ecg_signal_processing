@@ -1,5 +1,4 @@
 # Python packages
-import keras
 import keras.optimizers as kopt
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
 import numpy as np
@@ -9,16 +8,37 @@ import pathlib
 
 # Train the model
 def training(
-    model: keras.engine.functional.Functional,
-    X_train: np.ndarray, y_train: np.ndarray,
-    X_val: np.ndarray, y_val: np.ndarray,
-    model_name: str,
-    save_parameters: bool,
-    learning_rate=0.1,
-    epochs=1, factor=0.5, patience_RLR=10,
-    patience_ES=15, min_lr=1e-6, loss='binary_crossentropy',
+    model, X_train, y_train,
+    X_val, y_val, model_name,
+    save_parameters, learning_rate=0.1, 
+    epochs=100, factor=0.5, patience_RLR=10,
+    patience_ES=15, min_lr=1e-6, 
+    loss='binary_crossentropy',
     batch_size=256, monitor = 'val_loss'
     ):
+
+    '''
+    inputs:
+        model: keras.engine.functional.Functional;
+        X_train: np.ndarray; 
+        y_train: np.ndarray;
+        X_val: np.ndarray;
+        y_val: np.ndarray;
+        model_name: str;
+        save_parameters: bool -> if True, saves some information in a .csv file;
+        learning_rate: float;
+        epochs: int;
+        factor: float;
+        patience_RLR: float;
+        patience_ES: float;
+        min_lr: float;
+        loss: str -> loss function;
+        batch_size: int;
+        monitor: str;
+        
+    return:
+        history: fitted model;
+    '''
 
     # Parameters
     optimizer = kopt.Adam(learning_rate) # nao da de mudar por keras.optimizers.kopt.Adam pois da erro. Acontece com outros modulos do Keras tbm.

@@ -3,23 +3,11 @@ from datetime import datetime
 from keras.layers import Input
 import mlcm
 import numpy as np
-
 import train_model
 import utils
 
 # Load data
-# The dataset contains train, validation and test sets
-data = np.load('data.npz')
-
-# Training set
-X_train = data['X_train']
-y_train = data['y_train']
-# Validation set
-X_val = data['X_val']
-y_val = data['y_val']
-# Test set
-X_test = data['X_test']
-y_test = data['y_test']
+X_train, y_train, X_val, y_val, X_test, y_test = utils.load_data(test=True)
 
 # Sequence of classes names
 target_names = ['NORM', 'STTC', 'CD', 'MI', 'HYP']
@@ -40,8 +28,6 @@ model.summary()
 # Train the model
 history = train_model.training(model, X_train, y_train, X_val, y_val, model_name, save_parameters=True)
 
-
-
 # Evaluate the model
 score = model.evaluate(X_test, y_test)
 print(f"Custo de teste = {score[0]:.4f}")
@@ -50,7 +36,6 @@ print(f"Acurácia de teste = {100*score[1]:.2f}%")
 # Prediction of the model
 prediction = model.predict(X_test)
 # Convert the predictions to binary values
-# prediction_bin = np.array(prediction)
 prediction_bin = (prediction > 0.5).astype('int')
 
 # Save results

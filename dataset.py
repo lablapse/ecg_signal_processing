@@ -1,13 +1,22 @@
-import pandas as pd
-import numpy as np
-import wfdb
 import ast
-
-import tqdm
+import numpy as np
+import pandas as pd
 import pathlib
+import tqdm
+import wfdb
 
 
 def load_data(df, data_folder):
+    
+    '''
+    inputs:
+        df: 
+        data_folder: pathlib.PosixPath; 
+        
+    return:
+        data: numpy.ndarray;
+    '''
+    
     # Better to use pathlib instead of os and strings
     data_folder = pathlib.Path(data_folder)
 
@@ -44,6 +53,15 @@ super_classes = ['NORM','STTC','CD','MI','HYP']
 subdiag_dict = dict(meta_scp.diagnostic_class) # Key = subclasses, item = superclasses
 
 def simple_diagnostic(scp_codes):
+    
+    '''
+    inputs:
+        scp_codes: 
+    
+    return:
+        vec: 
+    '''
+    
     vec = np.zeros(len(super_classes), dtype='int')
     for key, item in scp_codes.items():
         if key in meta_scp.index:
