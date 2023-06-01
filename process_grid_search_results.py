@@ -18,6 +18,7 @@ df.head(10)
 def plot_f1_score_by_batch_size(df, model, learning_rates):
     
     '''
+    
         This function plots the f1-score from the grid_search.py file for each trained model.
         
     inputs:
@@ -32,7 +33,8 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
     fig.subplots_adjust(wspace=.3, hspace=.3, top=0.9, bottom=0.1, left=0.1, right=0.9)
     grayscale_colors = ['0.2', '0.5', '0.8']
     
-    for idx, lr in enumerate(learning_rates):
+    # Creating rows of plots based on 'learning_rate' values
+    for idx, lr in enumerate(learning_rates): 
         ax = axes[idx]
 
         # Extract the data
@@ -49,6 +51,7 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
         x = np.arange(len(group_by))  # the label locations
         width = 0.3  # the width of the bars
 
+        # Creating bars based on the 'optimizer' values for every value in 'batch_size'
         for i, (attribute, value) in enumerate(data.items()):
             offset = width * i
             rects = ax.bar(x + offset, value, width, label=attribute, color=grayscale_colors[i])
@@ -67,10 +70,13 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
     fig.text(0.03, .98, model.upper(), ha='left', va='top')
     
     # Add the legend below the subplots
-    handles, labels = ax.get_legend_handles_labels()
+    handles, _ = ax.get_legend_handles_labels()
+    
+    # Creating the legend about the 'optimizer' values at the upper center of the figure
     fig.legend(handles, ['Adam', 'RMSProp', 'SGD'], loc='upper center',\
                ncol=len(data), bbox_to_anchor=(0.5, 1.0), edgecolor='none', facecolor='none')
     
+    # Showing the created figure
     plt.show()
 
 # Extract unique values for plotting

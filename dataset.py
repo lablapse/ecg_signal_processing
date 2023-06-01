@@ -29,15 +29,17 @@ def load_data(df, data_folder, sampling_rate):
     # Better to use pathlib instead of os and strings
     data_folder = pathlib.Path(data_folder)
 
-    # Get information about one example file. This already collects for 100Hz sampling.
+    # Get information about one example file. It collects for 100Hz sampling.
     if sampling_rate == 100:
         _, info = wfdb.rdsamp(str(data_folder / df.filename_lr[0]))
         selected = df.filename_lr
 
+    # Get information about one example file. It collects for 500Hz sampling.
     elif sampling_rate == 500:
         _, info = wfdb.rdsamp(str(data_folder / df.filename_hr[0]))
         selected = df.filename_hr
         
+    # Raising an error for invalid sampling_rate value 
     else:
         raise ValueError(" Wrong value to samplig_rate. The accepted ones are 100 and 500 Hz. ")
 
