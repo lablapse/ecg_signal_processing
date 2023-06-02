@@ -6,17 +6,21 @@ import tqdm # used to measure the progress of an iteration
 import wfdb # used to extract the ECG signal
 
 '''
+
     This script collects the information in the PTB-XL database and separate in 'train', 'validation' and 'test' information.
     Train dataset - folds 1 to 8;
     Validation dataset - fold 9;
     Test dataset - fold 10;
     
     The PTB-XL was manipulated to rule out diagnoses with less than 50% certainty.
+    Signals with empty labels are discarted.
+    
 '''
 
 def load_data(df, data_folder, sampling_rate):
     
     '''
+    
     inputs:
         df: pandas.core.frame.DataFrame;
         data_folder: pathlib.PosixPath; 
@@ -24,6 +28,7 @@ def load_data(df, data_folder, sampling_rate):
         
     return:
         data: numpy.ndarray;
+        
     '''
     
     # Better to use pathlib instead of os and strings
@@ -77,16 +82,18 @@ def simple_diagnostic(scp_codes):
             if item >= 50:
                 vec[super_classes.index(diag_class)] = 1
 
-    # No diagnostic class present. This will be used later to drop information about missing diagnosis.
+    # No diagnostic class present.
     if vec.sum() == 0:
         return '???'
 
     return vec
 
-
+# Defining path
 path = '/datasets/ptbxl' # path to the PTB-XL database
 path = pathlib.Path(path) # creating the pathlib.PosixPathvariable to be passed to the load_data function
-sampling_rate = 100 # selecting the sampling rate from the PTB-XL database. The other option would be 500 Hz.
+
+# selecting the sampling rate from the PTB-XL database. The other option would be 500 Hz.
+sampling_rate = 100 
 
 # Load and convert annotation data
 metadata = pd.read_csv(path / 'ptbxl_database.csv') 
@@ -96,8 +103,10 @@ metadata.scp_codes = metadata.scp_codes.apply(lambda x: ast.literal_eval(x))
 meta_scp = pd.read_csv(path / 'scp_statements.csv', index_col=0)
 meta_scp = meta_scp[meta_scp.diagnostic == 1]
 
+# Defining the superclasses
 super_classes = ['NORM','STTC','CD','MI','HYP']
 
+# Defining a type dict variable with the subclasses and superclasses values
 subdiag_dict = dict(meta_scp.diagnostic_class) # Key = subclasses, item = superclasses
 
 # Simplify diagnostic
@@ -113,8 +122,8 @@ X = load_data(metadata, path, sampling_rate)
 
 # The dataset has 10 possible "validation folds",
 # Folds 1-8 for training, fold 9 for validation and fold 10 for test
-val_fold = 9
 test_fold = 10
+val_fold = 9
 
 
 ''' Creating the datasets '''

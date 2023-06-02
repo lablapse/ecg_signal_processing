@@ -1,17 +1,17 @@
 # Python packages
 import gc # Garbage collector
-import keras
+import keras # for the machine learning models
 from keras import backend as K # To clear gpu memory
-from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
-from keras.models import Model
+from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add # Easier way to write some keras functions 
+from keras.models import Model # Easier way to write some keras functions
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-import numpy as np
-import pathlib
-import plot_utils as putils
-import pandas as pd
-import seaborn as sns
-import sklearn.metrics as skmetrics
+import matplotlib.pyplot as plt # for plotting
+import numpy as np # some fundamental operations
+import pathlib # for the paths 
+import plot_utils as putils # importing custom code
+import pandas as pd # for .csv manipulation
+import seaborn as sns # used in some plotting
+import sklearn.metrics as skmetrics # Will be destroyed, killed, forgotten
 import tensorflow as tf
 
 # Rajpurkar model functions

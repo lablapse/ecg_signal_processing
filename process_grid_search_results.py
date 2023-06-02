@@ -43,6 +43,7 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
 
         # https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
         # data from https://allisonhorst.github.io/palmerpenguins/
+        # Selecting the information based on 'batch_size' value
         group_by = np.unique(df2['batch_size'])
         data = {}   
         for opt in np.unique(df2['optimizer']):
@@ -57,6 +58,7 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
             rects = ax.bar(x + offset, value, width, label=attribute, color=grayscale_colors[i])
             ax.bar_label(rects, padding=.05, fmt='%.2f')
 
+        # Setting the bar plots with the value information of the respective 'batch_size'
         ax.set_xticks(x + width, group_by)
         ax.set_xticklabels(group_by)
         ax.set_ylim(0, 1)
