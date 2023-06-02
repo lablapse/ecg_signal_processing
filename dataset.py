@@ -1,9 +1,9 @@
-import ast
-import numpy as np
-import pandas as pd
-import pathlib
-import tqdm
-import wfdb
+import ast # used to transform strings into objects from ast.literal_eval
+import numpy as np # used for basic manipulations
+import pandas as pd # used to manipulate the .csv files
+import pathlib # used to create the path information
+import tqdm # used to measure the progress of an iteration
+import wfdb # used to extract the ECG signal
 
 '''
     This script collects the information in the PTB-XL database and separate in 'train', 'validation' and 'test' information.
@@ -77,7 +77,7 @@ def simple_diagnostic(scp_codes):
             if item >= 50:
                 vec[super_classes.index(diag_class)] = 1
 
-    # No diagnostic class present
+    # No diagnostic class present. This will be used later to drop information about missing diagnosis.
     if vec.sum() == 0:
         return '???'
 
@@ -86,7 +86,7 @@ def simple_diagnostic(scp_codes):
 
 path = '/datasets/ptbxl' # path to the PTB-XL database
 path = pathlib.Path(path) # creating the pathlib.PosixPathvariable to be passed to the load_data function
-sampling_rate = 100 # selecting the sampling rate from the PTB-XL database. The other option would be 500 Hz
+sampling_rate = 100 # selecting the sampling rate from the PTB-XL database. The other option would be 500 Hz.
 
 # Load and convert annotation data
 metadata = pd.read_csv(path / 'ptbxl_database.csv') 
