@@ -11,7 +11,7 @@ def training(
     model, X_train, y_train,
     X_val, y_val, model_name,
     save_parameters, learning_rate=0.1, 
-    epochs=100, factor=0.5, patience_RLR=10,
+    epochs=1, factor=0.5, patience_RLR=10,
     patience_ES=15, min_lr=1e-6, 
     loss='binary_crossentropy',
     batch_size=256, monitor = 'val_loss'

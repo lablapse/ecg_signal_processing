@@ -545,3 +545,165 @@ def load_data(test=False):
 #     # Prepare the data
 #     train_dataset = train_dataset.batch(batch_size).prefetch(1) # 1 batch is prepared while the other is being trained
 #     val_dataset = val_dataset.batch(batch_size).prefetch(1)     # 1 batch is prepared while the other is being trained
+
+def get_mlcm_report(conf_mat, target_names, model_name, print_binary_mat=True):
+    '''
+    This function is a modified version of the 'stats' function presented in the mlcl paper.
+    '''
+    
+    num_classes = conf_mat.shape[1]
+    tp = np.zeros(num_classes, dtype=np.int64)  
+    tn = np.zeros(num_classes, dtype=np.int64)  
+    fp = np.zeros(num_classes, dtype=np.int64)  
+    fn = np.zeros(num_classes, dtype=np.int64)  
+
+    precision = np.zeros(num_classes, dtype=float)  
+    recall = np.zeros(num_classes, dtype=float)  
+    f1_score = np.zeros(num_classes, dtype=float)  
+
+    # Calculating TP, TN, FP, FN from MLCM
+    for k in range(num_classes): 
+        tp[k] = conf_mat[k][k]
+        for i in range(num_classes):
+            if i != k:
+                tn[k] += conf_mat[i][i]
+                fp[k] += conf_mat[i][k]
+                fn[k] += conf_mat[k][i]
+
+    # Creating one_vs_rest confusion matrices
+    one_vs_rest = np.zeros((num_classes,2,2), dtype='int64')
+    one_vs_rest [:,0,0] = tn
+    one_vs_rest [:,0,1] = fp
+    one_vs_rest [:,1,0] = fn
+    one_vs_rest [:,1,1] = tp
+    if print_binary_mat:
+        print(one_vs_rest)
+
+    # Calculating precision, recall, and F1-score for each of classes
+    epsilon = 1e-7 # A small value to prevent division by zero
+    precision = tp/(tp+fp+epsilon)
+    recall = tp/(tp+fn+epsilon)
+    f1_score = 2*tp/(2*tp+fn+fp+epsilon)
+
+    divide = conf_mat.sum(axis=1, dtype='int64') # sum of each row of MLCM
+
+    d = {}
+
+    if divide[-1] != 0: # some instances have not been assigned with any label 
+        micro_precision = tp.sum()/(tp.sum()+fp.sum())
+        macro_precision = precision.sum()/num_classes
+        weighted_precision = (precision*divide).sum()/divide.sum()
+
+        micro_recall = tp.sum()/(tp.sum()+fn.sum())
+        macro_recall = recall.sum()/num_classes
+        weighted_recall = (recall*divide).sum()/divide.sum()
+
+        micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
+        macro_f1 = f1_score.sum()/num_classes
+        weighted_f1 = (f1_score*divide).sum()/divide.sum()
+
+        # print('\n       class#     precision        recall      f1-score\
+        # weight\n')
+        sp = '        '
+        sp2 = '  '
+        total_weight = divide.sum()
+        float_formatter = "{:.2f}".format
+        for k in range(num_classes-1):
+            # print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
+            #       float_formatter(recall[k]), sp,float_formatter(f1_score[k]),\
+            #       sp,divide[k])
+            d[f'{target_names[k]}'] = {'precision':precision[k], 'recall':recall[k], \
+                                     'f1_score':f1_score[k], 'divide':divide[k]}
+        k = num_classes-1
+        # print(sp,' NTL',sp,float_formatter(precision[k]),sp, \
+        #       float_formatter(recall[k]), sp,float_formatter(f1_score[k]), \
+        #       sp,divide[k])
+        d['NTL'] = {'precision':precision[k], 'recall':recall[k], \
+                    'f1_score':f1_score[k], 'divide':divide[k]}
+
+        # print('\n    micro avg',sp,float_formatter(micro_precision),sp, \
+        #       float_formatter(micro_recall),sp,float_formatter(micro_f1),\
+        #       sp,total_weight)
+        d['micro avg'] = {'precision':micro_precision, 'recall':micro_recall, \
+                          'f1_score':micro_f1, 'divide':total_weight}
+        
+        # print('    macro avg',sp,float_formatter(macro_precision),sp,
+        #       float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
+        #       total_weight)
+        d['macro avg'] = {'precision':macro_precision, 'recall':macro_recall, \
+                          'f1_score':macro_f1, 'divide':total_weight}
+        
+        # print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
+        #       float_formatter(weighted_recall),sp, \
+        #       float_formatter(weighted_f1),sp,total_weight)
+        d['weighted avg'] = {'precision':weighted_precision, 'recall':weighted_recall, \
+                          'f1_score':weighted_f1, 'divide':total_weight}
+    else:
+        precision = precision[:-1]
+        recall = recall[:-1]
+        f1_score = f1_score[:-1]
+        divide = divide[:-1]
+        num_classes -= 1
+
+        micro_precision = tp.sum()/(tp.sum()+fp.sum())
+        macro_precision = precision.sum()/num_classes
+        weighted_precision = (precision*divide).sum()/divide.sum()
+
+        micro_recall = tp.sum()/(tp.sum()+fn.sum())
+        macro_recall = recall.sum()/num_classes
+        weighted_recall = (recall*divide).sum()/divide.sum()
+
+        micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
+        macro_f1 = f1_score.sum()/num_classes
+        weighted_f1 = (f1_score*divide).sum()/divide.sum()
+
+        # print('\n       class#     precision        recall      f1-score\
+        # weight\n')
+        sp = '        '
+        sp2 = '  '
+        total_weight = divide.sum()
+        float_formatter = "{:.2f}".format
+        for k in range(num_classes):
+            # print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
+            #       float_formatter(recall[k]), sp,\
+            #       float_formatter(f1_score[k]),sp,divide[k])
+            d[f'{target_names[k]}'] = {'precision':precision[k], 'recall':recall[k], \
+                                     'f1_score':f1_score[k], 'divide':divide[k]}
+            
+        # print(sp,' NoC',sp,'There is not any data with no true-label assigned!')
+        d[f'NoC'] = {'precision':None, 'recall':None, \
+                     'f1_score':None, 'divide':None}
+
+        # print('\n    micro avg',sp,float_formatter(micro_precision),sp,\
+        #       float_formatter(micro_recall),sp,float_formatter(micro_f1),\
+        #       sp,total_weight)
+        d['micro avg'] = {'precision':micro_precision, 'recall':micro_recall, \
+                          'f1_score':micro_f1, 'divide':total_weight}        
+        
+        # print('    macro avg',sp,float_formatter(macro_precision),sp,\
+        #       float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
+        #       total_weight)
+        d['macro avg'] = {'precision':macro_precision, 'recall':macro_recall, \
+                          'f1_score':macro_f1, 'divide':total_weight}    
+            
+        # print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
+        #       float_formatter(weighted_recall),sp,\
+        #       float_formatter(weighted_f1),sp,total_weight)
+        d['weighted avg'] = {'precision':weighted_precision, 'recall':weighted_recall, \
+                          'f1_score':weighted_f1, 'divide':total_weight}    
+        
+    # Path
+    csv_report = f'results/{model_name}/report.csv'
+    csv_path_auc = f'results/{model_name}/roc_auc.csv'
+    
+    # Convert strings to Path type
+    csv_report = pathlib.Path(csv_report)
+    csv_path_auc = pathlib.Path(csv_path_auc)
+
+    # Make sure the files are saved in a folder that exists
+    csv_report.parent.mkdir(parents=True, exist_ok=True)
+    csv_path_auc.parent.mkdir(parents=True, exist_ok=True)
+        
+    pd.DataFrame.from_dict(d, orient='index').to_csv(csv_report)
+
+    return 
