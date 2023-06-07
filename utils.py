@@ -214,8 +214,6 @@ def get_model(input_layer, model_name):
 def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.ndarray, 
                 target_names: list, model_name: str) -> None:
 
-    support = np.sum(y_test, axis=0)
-
     # Path
     csv_report = f'results/{model_name}/report.csv'
     csv_path_auc = f'results/{model_name}/roc_auc.csv'
@@ -248,9 +246,6 @@ def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.n
     pd.DataFrame.from_dict(data=auc_dict, orient='index').to_csv(csv_path_auc, header=False)
 
     return # Essa é a linha 202
-
-
-# def report_from_mlcm(d, support, target_names):
 
 
 # Plot results
@@ -288,8 +283,7 @@ def plot_results(history, name, metric, plot_path='plots'):
 
 
 # This function plots the normalized confusion matrix from mlcm
-def plot_confusion_matrix(cm: np.ndarray, model_name: str, 
-                          target_names: list, plot_path='results') -> None:
+def plot_confusion_matrix(cm, model_name, target_names, plot_path='results'):
 
     '''
     inputs:
@@ -367,7 +361,17 @@ def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
     return fig
 
 
-def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
+def get_mlcm_metrics(conf_mat):
+    
+    '''
+    
+    input:
+        conf_mat: np_ndarray -> the 'conf_mat' returned in the 'cm' function from the 'mlcm' paper;
+        
+    return:
+        d: dict;
+    '''
+    
     num_classes = conf_mat.shape[1]
     tp = np.zeros(num_classes, dtype=np.int64)  
     tn = np.zeros(num_classes, dtype=np.int64)  
@@ -407,31 +411,7 @@ def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
         micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
-        #### 331 é a de baixo ####
-        print('\n       class#     precision        recall      f1-score\
-        weight\n')
-        sp = '        '
-        sp2 = '  '
-        total_weight = divide.sum()
-        float_formatter = "{:.2f}".format
-        for k in range(num_classes-1):
-            print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
-                  float_formatter(recall[k]), sp,float_formatter(f1_score[k]),\
-                  sp,divide[k])
-        k = num_classes-1
-        print(sp,' NTL',sp,float_formatter(precision[k]),sp, \
-              float_formatter(recall[k]), sp,float_formatter(f1_score[k]), \
-              sp,divide[k])
 
-        print('\n    micro avg',sp,float_formatter(micro_precision),sp, \
-              float_formatter(micro_recall),sp,float_formatter(micro_f1),\
-              sp,total_weight)
-        print('    macro avg',sp,float_formatter(macro_precision),sp,
-              float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
-              total_weight)
-        print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
-              float_formatter(weighted_recall),sp, \
-              float_formatter(weighted_f1),sp,total_weight) #### 354 é essa ####
     else:
         precision = precision[:-1]
         recall = recall[:-1]
@@ -450,28 +430,6 @@ def get_mlcm_metrics(conf_mat: np.ndarray) -> dict:
         micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
-        #### 374 é a de baixo ####
-        print('\n       class#     precision        recall      f1-score\
-        weight\n')
-        sp = '        '
-        sp2 = '  '
-        total_weight = divide.sum()
-        float_formatter = "{:.2f}".format
-        for k in range(num_classes):
-            print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
-                  float_formatter(recall[k]), sp,\
-                  float_formatter(f1_score[k]),sp,divide[k])
-        print(sp,' NoC',sp,'There is not any data with no true-label assigned!')
-
-        print('\n    micro avg',sp,float_formatter(micro_precision),sp,\
-              float_formatter(micro_recall),sp,float_formatter(micro_f1),\
-              sp,total_weight)
-        print('    macro avg',sp,float_formatter(macro_precision),sp,\
-              float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
-              total_weight)
-        print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
-              float_formatter(weighted_recall),sp,\
-              float_formatter(weighted_f1),sp,total_weight) #### 394 é essa ####
 
     # construct a dict to store values
     d = {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn, 'precision': precision,\
@@ -534,21 +492,14 @@ def load_data(test=False):
             
     return info
 
-# def data_manipulations(data, batch_size):
-#     datasets = []
-#     for dataset in data:
-#         datasets.append(tf.data.Dataset.from_tensor_slices((dataset[0], dataset[1])).shuffle(len(dataset[0])))
-
-#     for dataset in datasets:
-#         dataset = dataset.batch(batch_size).prefetch(1)
-
-#     # Prepare the data
-#     train_dataset = train_dataset.batch(batch_size).prefetch(1) # 1 batch is prepared while the other is being trained
-#     val_dataset = val_dataset.batch(batch_size).prefetch(1)     # 1 batch is prepared while the other is being trained
-
-def get_mlcm_report(conf_mat, target_names, model_name, print_binary_mat=True):
+def get_mlcm_report(conf_mat, target_names, model_name):
     '''
     This function is a modified version of the 'stats' function presented in the mlcl paper.
+    
+    inputs:
+        conf_mat: numpy.ndarray -> the 'conf_mat' returned from the 'cm' function of the 'mlcm' paper;
+        target_names: list;
+        model_name: str;
     '''
     
     num_classes = conf_mat.shape[1]
@@ -569,15 +520,6 @@ def get_mlcm_report(conf_mat, target_names, model_name, print_binary_mat=True):
                 tn[k] += conf_mat[i][i]
                 fp[k] += conf_mat[i][k]
                 fn[k] += conf_mat[k][i]
-
-    # Creating one_vs_rest confusion matrices
-    one_vs_rest = np.zeros((num_classes,2,2), dtype='int64')
-    one_vs_rest [:,0,0] = tn
-    one_vs_rest [:,0,1] = fp
-    one_vs_rest [:,1,0] = fn
-    one_vs_rest [:,1,1] = tp
-    if print_binary_mat:
-        print(one_vs_rest)
 
     # Calculating precision, recall, and F1-score for each of classes
     epsilon = 1e-7 # A small value to prevent division by zero
@@ -602,42 +544,23 @@ def get_mlcm_report(conf_mat, target_names, model_name, print_binary_mat=True):
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
 
-        # print('\n       class#     precision        recall      f1-score\
-        # weight\n')
-        sp = '        '
-        sp2 = '  '
         total_weight = divide.sum()
-        float_formatter = "{:.2f}".format
+        
         for k in range(num_classes-1):
-            # print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
-            #       float_formatter(recall[k]), sp,float_formatter(f1_score[k]),\
-            #       sp,divide[k])
             d[f'{target_names[k]}'] = {'precision':precision[k], 'recall':recall[k], \
-                                     'f1_score':f1_score[k], 'divide':divide[k]}
+                                     'f1_score':f1_score[k], 'weight':divide[k]}
         k = num_classes-1
-        # print(sp,' NTL',sp,float_formatter(precision[k]),sp, \
-        #       float_formatter(recall[k]), sp,float_formatter(f1_score[k]), \
-        #       sp,divide[k])
         d['NTL'] = {'precision':precision[k], 'recall':recall[k], \
-                    'f1_score':f1_score[k], 'divide':divide[k]}
+                    'f1_score':f1_score[k], 'weight':divide[k]}
 
-        # print('\n    micro avg',sp,float_formatter(micro_precision),sp, \
-        #       float_formatter(micro_recall),sp,float_formatter(micro_f1),\
-        #       sp,total_weight)
         d['micro avg'] = {'precision':micro_precision, 'recall':micro_recall, \
-                          'f1_score':micro_f1, 'divide':total_weight}
+                          'f1_score':micro_f1, 'weight':total_weight}
         
-        # print('    macro avg',sp,float_formatter(macro_precision),sp,
-        #       float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
-        #       total_weight)
         d['macro avg'] = {'precision':macro_precision, 'recall':macro_recall, \
-                          'f1_score':macro_f1, 'divide':total_weight}
+                          'f1_score':macro_f1, 'weight':total_weight}
         
-        # print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
-        #       float_formatter(weighted_recall),sp, \
-        #       float_formatter(weighted_f1),sp,total_weight)
         d['weighted avg'] = {'precision':weighted_precision, 'recall':weighted_recall, \
-                          'f1_score':weighted_f1, 'divide':total_weight}
+                          'f1_score':weighted_f1, 'weight':total_weight}
     else:
         precision = precision[:-1]
         recall = recall[:-1]
@@ -657,40 +580,24 @@ def get_mlcm_report(conf_mat, target_names, model_name, print_binary_mat=True):
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
 
-        # print('\n       class#     precision        recall      f1-score\
-        # weight\n')
-        sp = '        '
-        sp2 = '  '
         total_weight = divide.sum()
-        float_formatter = "{:.2f}".format
+        
         for k in range(num_classes):
-            # print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
-            #       float_formatter(recall[k]), sp,\
-            #       float_formatter(f1_score[k]),sp,divide[k])
             d[f'{target_names[k]}'] = {'precision':precision[k], 'recall':recall[k], \
-                                     'f1_score':f1_score[k], 'divide':divide[k]}
+                                     'f1_score':f1_score[k], 'weight':divide[k]}
             
         # print(sp,' NoC',sp,'There is not any data with no true-label assigned!')
-        d[f'NoC'] = {'precision':None, 'recall':None, \
-                     'f1_score':None, 'divide':None}
+        d[f'NoC'] = {'precision':'no data', 'recall':'no data', \
+                     'f1_score':'no data', 'weight':'no data'}
 
-        # print('\n    micro avg',sp,float_formatter(micro_precision),sp,\
-        #       float_formatter(micro_recall),sp,float_formatter(micro_f1),\
-        #       sp,total_weight)
         d['micro avg'] = {'precision':micro_precision, 'recall':micro_recall, \
-                          'f1_score':micro_f1, 'divide':total_weight}        
+                          'f1_score':micro_f1, 'weight':total_weight}        
         
-        # print('    macro avg',sp,float_formatter(macro_precision),sp,\
-        #       float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
-        #       total_weight)
         d['macro avg'] = {'precision':macro_precision, 'recall':macro_recall, \
-                          'f1_score':macro_f1, 'divide':total_weight}    
+                          'f1_score':macro_f1, 'weight':total_weight}    
             
-        # print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
-        #       float_formatter(weighted_recall),sp,\
-        #       float_formatter(weighted_f1),sp,total_weight)
         d['weighted avg'] = {'precision':weighted_precision, 'recall':weighted_recall, \
-                          'f1_score':weighted_f1, 'divide':total_weight}    
+                          'f1_score':weighted_f1, 'weight':total_weight}    
         
     # Path
     csv_report = f'results/{model_name}/report.csv'
@@ -706,4 +613,4 @@ def get_mlcm_report(conf_mat, target_names, model_name, print_binary_mat=True):
         
     pd.DataFrame.from_dict(d, orient='index').to_csv(csv_report)
 
-    return 
+    return
