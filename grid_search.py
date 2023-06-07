@@ -3,7 +3,6 @@ from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, C
 from keras.layers import Input
 from keras.models import load_model
 from keras.optimizers import SGD, RMSprop, Adam
-import numpy as np
 import pandas as pd
 import pathlib, os
 import tensorflow as tf
