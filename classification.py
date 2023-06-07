@@ -41,7 +41,7 @@ prediction_bin = (prediction > 0.5).astype('int')
 # Save results
 cm, _ = mlcm.cm(y_test, prediction_bin, print_note=False)
 utils.plot_confusion_matrix(cm, model_name, target_names)
-utils.get_metrics(y_test, prediction, prediction_bin, target_names, model_name)
+# utils.get_metrics_skmetrics(y_test, prediction, prediction_bin, target_names, model_name)
 print(f"#############################################################################")
 mlcm.stats(cm)
 utils.get_mlcm_report(cm, target_names, model_name)

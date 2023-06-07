@@ -4,7 +4,6 @@ import keras # for the machine learning models
 from keras import backend as K # To clear gpu memory
 from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add # Easier way to write some keras functions 
 from keras.models import Model # Easier way to write some keras functions
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt # for plotting
 import numpy as np # some fundamental operations
 import pathlib # for the paths 
@@ -210,8 +209,9 @@ def get_model(input_layer, model_name):
     return model
 
 
+#This function lost its purpose
 # Get the metrics Linha 168 ta abaixo
-def get_metrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.ndarray, 
+def get_metrics_skmetrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.ndarray, 
                 target_names: list, model_name: str) -> None:
 
     # Path
