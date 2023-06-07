@@ -21,8 +21,8 @@ timestamp = datetime.now().isoformat()
 model_name = f'{model_name}-{timestamp}'
 
 # Get the model
-input_layer = Input(shape=X_train.shape[1:])
-model = utils.get_model(input_layer, model_name)
+input_shape = X_train.shape[1:]
+model = utils.get_model(Input(shape=input_shape), model_name)
 model.summary()
 
 # Train the model
