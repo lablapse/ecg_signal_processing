@@ -17,6 +17,7 @@ def training(
     ):
 
     '''
+    
     inputs:
         model: keras.engine.functional.Functional;
         X_train: np.ndarray; 
@@ -37,6 +38,7 @@ def training(
         
     return:
         history: fitted model;
+        
     '''
 
     # Parameters
