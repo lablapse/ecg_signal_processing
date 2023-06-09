@@ -2,7 +2,7 @@
 import gc # Garbage collector
 import keras # for the machine learning models
 from keras import backend as K # To clear gpu memory
-from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add # Easier way to write some keras functions 
+from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add, Input # Easier way to write some keras functions 
 from keras.models import Model # Easier way to write some keras functions
 import matplotlib.pyplot as plt # for plotting
 import numpy as np # some fundamental operations
@@ -111,7 +111,7 @@ def residual_blocks_ribeiro(input, num_filter=128,
 
 
 # Get the models of the network
-def get_model(input_layer, model_name):
+def get_model(shape_input, model_name):
 
     '''
     inputs:
@@ -121,6 +121,7 @@ def get_model(input_layer, model_name):
     return:
         model: keras.engine.functional.Functional;
     '''
+    input_layer = Input(shape=shape_input)
 
     if 'rajpurkar' in model_name:
         rate_drop = 1 - 0.8

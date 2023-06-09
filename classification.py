@@ -1,8 +1,6 @@
 # Python packages
 from datetime import datetime
-from keras.layers import Input
 import mlcm
-import numpy as np
 import train_model
 import utils
 
@@ -22,7 +20,7 @@ model_name = f'{model_name}-{timestamp}'
 
 # Get the model
 input_shape = X_train.shape[1:]
-model = utils.get_model(Input(shape=input_shape), model_name)
+model = utils.get_model(input_shape, model_name)
 model.summary()
 
 # Train the model
