@@ -161,6 +161,7 @@ def format_figure(
 def save_fig(fig, name, path=None, format=None, dpi=600, close=False, usetex=True, **kwargs):
     
     '''
+    
     inputs:
         fig: Figure;
         name: str; 
@@ -172,6 +173,7 @@ def save_fig(fig, name, path=None, format=None, dpi=600, close=False, usetex=Tru
         
     return:
         fig: Figure;
+        
     '''
     
     # Make sure to save on a folder that exists
