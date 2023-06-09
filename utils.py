@@ -111,7 +111,7 @@ def residual_blocks_ribeiro(input, num_filter=128,
 
 
 # Get the models of the network
-def get_model(shape_input, model_name):
+def get_model(input_shape, model_name):
 
     '''
     inputs:
@@ -121,7 +121,7 @@ def get_model(shape_input, model_name):
     return:
         model: keras.engine.functional.Functional;
     '''
-    input_layer = Input(shape=shape_input)
+    input_layer = Input(shape=input_shape)
 
     if 'rajpurkar' in model_name:
         rate_drop = 1 - 0.8
