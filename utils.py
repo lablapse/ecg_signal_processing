@@ -1,69 +1,127 @@
 # Python packages
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pathlib
-from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add
-from keras.models import Model
-import sklearn.metrics as skmetrics
-import mlcm
-import plot_utils as putils
+import gc # Garbage collector
+import keras # for the machine learning models
+from keras import backend as K # To clear gpu memory
+from keras.layers import Conv1D, MaxPooling1D, Dropout, BatchNormalization, Flatten, Dense, ReLU, Add, Input # Easier way to write some keras functions 
+from keras.models import Model # Easier way to write some keras functions
+import matplotlib.pyplot as plt # for plotting
+import numpy as np # some fundamental operations
+import pathlib # for the paths 
+import plot_utils as putils # importing custom code
+import pandas as pd # for .csv manipulation
+import seaborn as sns # used in some plotting
+import sklearn.metrics as skmetrics # Will be destroyed, killed, forgotten
+import tensorflow as tf
 
 # Rajpurkar model functions
 # Create residual blocks
-def residual_blocks_rajpurkar(input,i=0, stride=1, num_filter=64, rate_drop=0.5, initializer='none'):
-
-    layer = BatchNormalization()(input)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer)(layer)
-    layer = BatchNormalization()(layer)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=stride, padding="same", kernel_initializer=initializer)(layer)
+def residual_blocks_rajpurkar(input, i=0, stride=1, 
+                              num_filter=64, rate_drop=0.5, 
+                              initializer='none'):
+    '''
+    This function creates the residual block for the Rajpurkar architecture
+    
+    inputs:
+        input: keras.engine.keras_tensor.KerasTensor;
+        i: int;
+        stride: int;
+        num_filter: int;
+        rate_drop: float;
+        initializer: str -> kernel_initializer for the kernel_initializer in Conv1D;
+        
+    return:
+        skip: keras.engine.keras_tensor.KerasTensor;
+    '''
+    
+    layer = keras.Sequential([BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop),
+                              Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer),
+                              BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop),
+                              Conv1D(kernel_size=16, filters=num_filter, strides=stride, padding="same", kernel_initializer=initializer)]
+                              )(input)
 
     #Short connection
     if i == 3 or i == 7 or i == 11:
-        layer_aj = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same")(input)
-        skip = MaxPooling1D(pool_size = 1, strides=2)(layer_aj)
+        skip = keras.Sequential([Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same"),
+                                 MaxPooling1D(pool_size = 1, strides=2)])(input)
     else:
         skip = MaxPooling1D(pool_size = 1, strides=stride)(input)
 
     # Adding layers
     return Add()([layer, skip])
 
-# Ribeiro's model functions
-# Create the skip connection A with MaxPooling and Conv layers
-def skip_connection(skip, num_filter=128, rate_drop=0, initializer='none', downsample=1):
-    skip = MaxPooling1D(pool_size=downsample,strides=downsample,padding='same')(skip)
-    skip = Conv1D(filters=num_filter,kernel_size=1,strides=1,padding='same')(skip)
+
+def skip_connection(skip, num_filter=128, downsample=1):
+    
+    '''
+    inputs:
+        skip: keras.engine.keras_tensor.KerasTensor;
+        num_filter: int;
+        downsample: int;
+        
+    return: keras.engine.keras_tensor.KerasTensor
+
+    '''
+    
+    skip = keras.Sequential([MaxPooling1D(pool_size=downsample,strides=downsample,padding='same'), 
+                            Conv1D(filters=num_filter,kernel_size=1,strides=1,padding='same')]
+                            )(skip)
     return skip
 
+
 # Create the residual blocks
-def residual_blocks_ribeiro(input, num_filter=128, rate_drop=0, initializer='none', downsample=1):
+def residual_blocks_ribeiro(input, num_filter=128, 
+                            rate_drop=0, initializer='none', downsample=1):
+
+    '''
+    inputs:
+        input: keras.engine.keras_tensor.KerasTensor;
+        num_filter: int;
+        rate_drop: float;
+        initializer: str -> kernel_initializer for the kernel_initializer in Conv1D;
+        downsample: int;
+        
+    return:
+        layer, skip: a tuple of two keras.engine.keras_tensor.KerasTensor
+    '''
 
     layer, skip = input
 
-    skip = skip_connection(skip, num_filter=num_filter, rate_drop=rate_drop, initializer=initializer, downsample=downsample)
+    skip = skip_connection(skip, num_filter=num_filter, downsample=downsample)
 
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer)(layer) 
-    layer = BatchNormalization()(layer)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
-    layer = Conv1D(kernel_size=16, filters=num_filter, strides=downsample, padding="same", kernel_initializer=initializer)(layer) 
+    layer = keras.Sequential([Conv1D(kernel_size=16, filters=num_filter, strides=1, padding="same", kernel_initializer=initializer),
+                              BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop),
+                              Conv1D(kernel_size=16, filters=num_filter, strides=downsample, padding="same", kernel_initializer=initializer)]
+                              )(layer)
 
     layer = Add()([layer, skip])
     skip = layer
 
-    layer = BatchNormalization()(layer)
-    layer = ReLU()(layer)
-    layer = Dropout(rate_drop)(layer)
+    layer = keras.Sequential([BatchNormalization(),
+                              ReLU(),
+                              Dropout(rate_drop)]
+                              )(layer)
 
     return layer, skip
 
+
 # Get the models of the network
-def get_model(input_layer, model_name):
+def get_model(input_shape, model_name):
+
+    '''
+    inputs:
+        input: keras.engine.keras_tensor.KerasTensor;
+        model_name: str -> selecting between 'rajpurkar' and 'ribeiro' architecture;
+        
+    return:
+        model: keras.engine.functional.Functional;
+    '''
+    input_layer = Input(shape=input_shape)
 
     if 'rajpurkar' in model_name:
         rate_drop = 1 - 0.8
@@ -75,20 +133,22 @@ def get_model(input_layer, model_name):
         )
 
         # First block
-        layers = Conv1D(strides=1, **conv_config)(input_layer)
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
+        layers = keras.Sequential([Conv1D(strides=1, **conv_config),
+                                   BatchNormalization(),
+                                   ReLU()]
+                                   )(input_layer)
 
         # Short connection
         skip = MaxPooling1D(pool_size=1, strides=2)(layers)
 
         # Second block
-        layers = Conv1D(strides=1, **conv_config)(layers)
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
-        layers = Dropout(rate_drop)(layers)
-        layers = Conv1D(strides=2, **conv_config)(layers)
-
+        layers = keras.Sequential([Conv1D(strides=1, **conv_config),
+                                   BatchNormalization(),
+                                   ReLU(),
+                                   Dropout(rate_drop),
+                                   Conv1D(strides=2, **conv_config)]
+                                   )(layers)
+        
         # Adding layers
         layers = Add()([layers, skip])
 
@@ -106,10 +166,12 @@ def get_model(input_layer, model_name):
             )
 
         # Output block
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
-        layers = Flatten()(layers)
-        layers = Dense(32)(layers)
+        layers = keras.Sequential([BatchNormalization(),
+                                   ReLU(),
+                                   Flatten(),                  
+                                   Dense(32)]
+                                   )(layers)
+        
         classification = Dense(5, activation='sigmoid')(layers)
     
     elif 'ribeiro' in model_name:
@@ -118,12 +180,12 @@ def get_model(input_layer, model_name):
         downsample = 4
 
         # Input block
-        layers = Conv1D(
-            kernel_size=16, filters=64, strides=1, padding="same", kernel_initializer=initializer
-        )(input_layer)  # Output_size = (1000, 64)
-        layers = BatchNormalization()(layers)
-        layers = ReLU()(layers)
-
+        layers = keras.Sequential([Conv1D(kernel_size=16, filters=64, strides=1,
+                                          padding="same", kernel_initializer=initializer),
+                                   BatchNormalization(),
+                                   ReLU()]
+                                   )(input_layer)
+        
         num_filter = np.array([128, 192, 256, 320])
 
         layer = layers
@@ -140,8 +202,7 @@ def get_model(input_layer, model_name):
         classification = Dense(5, activation='sigmoid',
                                kernel_initializer=initializer)(layer)
     else:
-        print('Wrong name')
-        return
+        raise NameError(" Wrong Name. Allowed names are 'rajpurkar' and 'ribeiro'. ")
 
     # Constructing the model
     model = Model(inputs=input_layer, outputs=classification)
@@ -149,27 +210,25 @@ def get_model(input_layer, model_name):
     return model
 
 
-# Get the metrics
-def get_metrics(y_test, prediction, prediction_bin, target_names, model_name, cm):
+#This function lost its purpose
+# Get the metrics Linha 168 ta abaixo
+def get_metrics_skmetrics(y_test: np.ndarray, prediction: np.ndarray, prediction_bin: np.ndarray, 
+                target_names: list, model_name: str) -> None:
 
     # Path
     csv_report = f'results/{model_name}/report.csv'
-    csv_report_mlcm = f'results/{model_name}/report_mlcm.csv'
     csv_path_auc = f'results/{model_name}/roc_auc.csv'
     
     # Convert strings to Path type
     csv_report = pathlib.Path(csv_report)
-    csv_report_mlcm = pathlib.Path(csv_report_mlcm)
     csv_path_auc = pathlib.Path(csv_path_auc)
 
     # Make sure the files are saved in a folder that exists
     csv_report.parent.mkdir(parents=True, exist_ok=True)
-    csv_report_mlcm.parent.mkdir(parents=True, exist_ok=True)
     csv_path_auc.parent.mkdir(parents=True, exist_ok=True)
 
     # Get the reports
-    report = skmetrics.classification_report(y_test,prediction_bin,output_dict=True,target_names=target_names, zero_division=1)
-    report_mlcm = mlcm.stats(cm, False)
+    report = skmetrics.classification_report(y_test, prediction_bin, output_dict=True, target_names=target_names, zero_division=1)
 
     # Save the reports
     pd.DataFrame.from_dict(report, orient='index').to_csv(csv_report)
@@ -187,10 +246,21 @@ def get_metrics(y_test, prediction, prediction_bin, target_names, model_name, cm
     }
     pd.DataFrame.from_dict(data=auc_dict, orient='index').to_csv(csv_path_auc, header=False)
 
-    return
+    return # Essa é a linha 202
+
 
 # Plot results
 def plot_results(history, name, metric, plot_path='plots'):
+
+    '''
+    inputs:
+        history; name: str;
+        metric: str;
+        plot_path:str;
+        
+    return:
+        This function returns nothing
+    '''
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path)
@@ -212,24 +282,26 @@ def plot_results(history, name, metric, plot_path='plots'):
 
     return
 
-# Transform the values in the confusion matrix in percentage
-def get_cm_percent(cm, total):
-    cm_perc = np.zeros_like(cm, dtype='float')
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            for k in range(cm.shape[2]):
-                cm_perc[i][j][k] = round((cm[i][j][k] / total) * 100, 2)
-    return cm_perc
 
-# Plot confusion matrix
-def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='results', print_note='false'):
+# This function plots the normalized confusion matrix from mlcm
+def plot_confusion_matrix(cm, model_name, target_names, plot_path='results'):
+
+    '''
+    inputs:
+        cm: np.ndarray; 
+        model_name: str; 
+        target_names: list;
+        plot_path: str;
+        
+    return:
+        This function returns nothing
+    '''
 
     # Make sure the plot folder exists
     plot_path = pathlib.Path(plot_path) / model_name
     plot_path.mkdir(parents=True, exist_ok=True)
 
     # Confusion matrix
-    cm, _ = mlcm.cm(y_test, y_pred, print_note=False)
     target_names = np.array([*target_names, 'NoC'])
 
     # Calculating the normalization of the confusion matrix
@@ -238,21 +310,27 @@ def plot_confusion_matrix(y_test, y_pred, model_name, target_names, plot_path='r
     cm_norm = 100 * cm / divide[:, None]
 
     # Plot the confusion matrix
-    fig, ax = plot_cm(cm_norm, target_names)
+    fig = plot_cm(cm_norm, target_names)
     name = f"{model_name.split('-')[0]}-cm"
     tight_kws = {'rect' : (0, 0, 1.1, 1)}
     putils.save_fig(fig, name, path=plot_path, figsize='square',
                     tight_scale='both', usetex=False, tight_kws=tight_kws)
 
-    # print('Raw confusion Matrix:')
-    # print(cm)
-    # print('Normalized confusion Matrix (%):')
-    # print(cm_norm)
-
-    return cm
+    return
 
 
 def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
+
+    '''
+    inputs:
+        confusion_matrix: np.ndarray; 
+        class_names: list;
+        fontsize:int; 
+        cmap: str;
+        
+    return:
+        fig: Figure;
+    '''
 
     # Plot the confusion matrix
     fig, ax = plt.subplots()
@@ -281,13 +359,20 @@ def plot_cm(confusion_matrix, class_names, fontsize=10, cmap='Blues'):
     ax.set_ylabel('Rótulo verdadeiro')
     fig.tight_layout()
 
-    return fig, ax
+    return fig
 
 
-# ########################################################################### #
-# Developing a function to produce some statistics based on the MLCM  
-# ########################################################################### #
-def get_mlcm_metrics(conf_mat, print_binary_mat=False):
+def get_mlcm_metrics(conf_mat):
+    
+    '''
+    
+    input:
+        conf_mat: np_ndarray -> the 'conf_mat' returned in the 'cm' function from the 'mlcm' paper;
+        
+    return:
+        d: dict;
+    '''
+    
     num_classes = conf_mat.shape[1]
     tp = np.zeros(num_classes, dtype=np.int64)  
     tn = np.zeros(num_classes, dtype=np.int64)  
@@ -328,30 +413,6 @@ def get_mlcm_metrics(conf_mat, print_binary_mat=False):
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
 
-        print('\n       class#     precision        recall      f1-score\
-        weight\n')
-        sp = '        '
-        sp2 = '  '
-        total_weight = divide.sum()
-        float_formatter = "{:.2f}".format
-        for k in range(num_classes-1):
-            print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
-                  float_formatter(recall[k]), sp,float_formatter(f1_score[k]),\
-                  sp,divide[k])
-        k = num_classes-1
-        print(sp,' NTL',sp,float_formatter(precision[k]),sp, \
-              float_formatter(recall[k]), sp,float_formatter(f1_score[k]), \
-              sp,divide[k])
-
-        print('\n    micro avg',sp,float_formatter(micro_precision),sp, \
-              float_formatter(micro_recall),sp,float_formatter(micro_f1),\
-              sp,total_weight)
-        print('    macro avg',sp,float_formatter(macro_precision),sp,
-              float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
-              total_weight)
-        print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
-              float_formatter(weighted_recall),sp, \
-              float_formatter(weighted_f1),sp,total_weight)
     else:
         precision = precision[:-1]
         recall = recall[:-1]
@@ -371,28 +432,6 @@ def get_mlcm_metrics(conf_mat, print_binary_mat=False):
         macro_f1 = f1_score.sum()/num_classes
         weighted_f1 = (f1_score*divide).sum()/divide.sum()
 
-        print('\n       class#     precision        recall      f1-score\
-        weight\n')
-        sp = '        '
-        sp2 = '  '
-        total_weight = divide.sum()
-        float_formatter = "{:.2f}".format
-        for k in range(num_classes):
-            print(sp2,sp,k,sp,float_formatter(precision[k]),sp, \
-                  float_formatter(recall[k]), sp,\
-                  float_formatter(f1_score[k]),sp,divide[k])
-        print(sp,' NoC',sp,'There is not any data with no true-label assigned!')
-
-        print('\n    micro avg',sp,float_formatter(micro_precision),sp,\
-              float_formatter(micro_recall),sp,float_formatter(micro_f1),\
-              sp,total_weight)
-        print('    macro avg',sp,float_formatter(macro_precision),sp,\
-              float_formatter(macro_recall),sp,float_formatter(macro_f1),sp,\
-              total_weight)
-        print(' weighted avg',sp,float_formatter(weighted_precision),sp,\
-              float_formatter(weighted_recall),sp,\
-              float_formatter(weighted_f1),sp,total_weight)
-
     # construct a dict to store values
     d = {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn, 'precision': precision,\
         'recall': recall, 'f1_score': f1_score, 'divide': divide,\
@@ -402,3 +441,177 @@ def get_mlcm_metrics(conf_mat, print_binary_mat=False):
         'micro_f1': micro_f1, 'macro_f1': macro_f1, 'weighted_f1': weighted_f1}
     
     return d
+
+
+def reset_keras():
+    """
+    Reset Keras session and clear GPU memory.
+    """
+    session = K.get_session()
+    if session:
+        session.close()
+
+    K.clear_session()
+    tf.compat.v1.reset_default_graph()
+    try:
+        del model, loaded_model, history # this is from global space - change this as you need
+    except:
+        pass
+
+    gc.collect() # if it's done something you should see a number being outputted
+
+    # Create a new interactive session
+    config = tf.compat.v1.ConfigProto()
+    # Enable dynamic memory allocation
+    config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 1
+    config.gpu_options.visible_device_list = '0'
+    session = tf.compat.v1.InteractiveSession(config=config)
+
+def load_data(test=False):
+    """
+    Load data from the 'data.npz' file.
+
+    inputs:
+        test: boolean;
+
+    Returns:
+        X_train, y_train, X_val, y_val: list of train and validation data if test=False;
+        X_train, y_train, X_val, y_val, X_test, y_test: list of train, validation and test data if test=True;
+        
+        The values in the returned list are numpy.ndarray type
+    """
+    info = []
+    with np.load('data.npz') as data:
+        info.append(data['X_train'])
+        info.append(data['y_train'])
+        info.append(data['X_val'])
+        info.append(data['y_val'])
+        if test:
+            info.append(data['X_test'])
+            info.append(data['y_test'])
+            
+    return info
+
+def get_mlcm_report(conf_mat, target_names, model_name):
+    '''
+    This function is a modified version of the 'stats' function presented in the mlcl paper.
+    
+    inputs:
+        conf_mat: numpy.ndarray -> the 'conf_mat' returned from the 'cm' function of the 'mlcm' paper;
+        target_names: list;
+        model_name: str;
+    '''
+    
+    num_classes = conf_mat.shape[1]
+    tp = np.zeros(num_classes, dtype=np.int64)  
+    tn = np.zeros(num_classes, dtype=np.int64)  
+    fp = np.zeros(num_classes, dtype=np.int64)  
+    fn = np.zeros(num_classes, dtype=np.int64)  
+
+    precision = np.zeros(num_classes, dtype=float)  
+    recall = np.zeros(num_classes, dtype=float)  
+    f1_score = np.zeros(num_classes, dtype=float)  
+
+    # Calculating TP, TN, FP, FN from MLCM
+    for k in range(num_classes): 
+        tp[k] = conf_mat[k][k]
+        for i in range(num_classes):
+            if i != k:
+                tn[k] += conf_mat[i][i]
+                fp[k] += conf_mat[i][k]
+                fn[k] += conf_mat[k][i]
+
+    # Calculating precision, recall, and F1-score for each of classes
+    epsilon = 1e-7 # A small value to prevent division by zero
+    precision = tp/(tp+fp+epsilon)
+    recall = tp/(tp+fn+epsilon)
+    f1_score = 2*tp/(2*tp+fn+fp+epsilon)
+
+    divide = conf_mat.sum(axis=1, dtype='int64') # sum of each row of MLCM
+
+    d = {}
+
+    if divide[-1] != 0: # some instances have not been assigned with any label 
+        micro_precision = tp.sum()/(tp.sum()+fp.sum())
+        macro_precision = precision.sum()/num_classes
+        weighted_precision = (precision*divide).sum()/divide.sum()
+
+        micro_recall = tp.sum()/(tp.sum()+fn.sum())
+        macro_recall = recall.sum()/num_classes
+        weighted_recall = (recall*divide).sum()/divide.sum()
+
+        micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
+        macro_f1 = f1_score.sum()/num_classes
+        weighted_f1 = (f1_score*divide).sum()/divide.sum()
+
+        total_weight = divide.sum()
+        
+        for k in range(num_classes-1):
+            d[f'{target_names[k]}'] = {'precision':precision[k], 'recall':recall[k], \
+                                     'f1_score':f1_score[k], 'weight':divide[k]}
+        k = num_classes-1
+        d['NTL'] = {'precision':precision[k], 'recall':recall[k], \
+                    'f1_score':f1_score[k], 'weight':divide[k]}
+
+        d['micro avg'] = {'precision':micro_precision, 'recall':micro_recall, \
+                          'f1_score':micro_f1, 'weight':total_weight}
+        
+        d['macro avg'] = {'precision':macro_precision, 'recall':macro_recall, \
+                          'f1_score':macro_f1, 'weight':total_weight}
+        
+        d['weighted avg'] = {'precision':weighted_precision, 'recall':weighted_recall, \
+                          'f1_score':weighted_f1, 'weight':total_weight}
+    else:
+        precision = precision[:-1]
+        recall = recall[:-1]
+        f1_score = f1_score[:-1]
+        divide = divide[:-1]
+        num_classes -= 1
+
+        micro_precision = tp.sum()/(tp.sum()+fp.sum())
+        macro_precision = precision.sum()/num_classes
+        weighted_precision = (precision*divide).sum()/divide.sum()
+
+        micro_recall = tp.sum()/(tp.sum()+fn.sum())
+        macro_recall = recall.sum()/num_classes
+        weighted_recall = (recall*divide).sum()/divide.sum()
+
+        micro_f1 = (2*tp.sum())/(2*tp.sum()+fn.sum()+fp.sum())
+        macro_f1 = f1_score.sum()/num_classes
+        weighted_f1 = (f1_score*divide).sum()/divide.sum()
+
+        total_weight = divide.sum()
+        
+        for k in range(num_classes):
+            d[f'{target_names[k]}'] = {'precision':precision[k], 'recall':recall[k], \
+                                     'f1_score':f1_score[k], 'weight':divide[k]}
+            
+        # print(sp,' NoC',sp,'There is not any data with no true-label assigned!')
+        d[f'NoC'] = {'precision':'no data', 'recall':'no data', \
+                     'f1_score':'no data', 'weight':'no data'}
+
+        d['micro avg'] = {'precision':micro_precision, 'recall':micro_recall, \
+                          'f1_score':micro_f1, 'weight':total_weight}        
+        
+        d['macro avg'] = {'precision':macro_precision, 'recall':macro_recall, \
+                          'f1_score':macro_f1, 'weight':total_weight}    
+            
+        d['weighted avg'] = {'precision':weighted_precision, 'recall':weighted_recall, \
+                          'f1_score':weighted_f1, 'weight':total_weight}    
+        
+    # Path
+    csv_report = f'results/{model_name}/report.csv'
+    csv_path_auc = f'results/{model_name}/roc_auc.csv'
+    
+    # Convert strings to Path type
+    csv_report = pathlib.Path(csv_report)
+    csv_path_auc = pathlib.Path(csv_path_auc)
+
+    # Make sure the files are saved in a folder that exists
+    csv_report.parent.mkdir(parents=True, exist_ok=True)
+    csv_path_auc.parent.mkdir(parents=True, exist_ok=True)
+        
+    pd.DataFrame.from_dict(d, orient='index').to_csv(csv_report)
+
+    return

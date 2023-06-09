@@ -4,27 +4,43 @@ from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, C
 import pandas as pd
 import pathlib
 
+
 # Train the model
 def training(
-    model,
-    X_train, y_train,
-    X_val, y_val,
-    model_name,
-    save_parameters,
-    learning_rate=0.1,
-    epochs=100,
+    model, X_train, y_train,
+    X_val, y_val, model_name,
+    save_parameters, learning_rate=0.1, 
+    epochs=100, factor=0.5, patience_RLR=10,
+    patience_ES=15, min_lr=1e-6, 
+    loss='binary_crossentropy',
+    batch_size=256, monitor = 'val_loss'
     ):
 
+    '''
+    inputs:
+        model: keras.engine.functional.Functional;
+        X_train: np.ndarray; 
+        y_train: np.ndarray;
+        X_val: np.ndarray;
+        y_val: np.ndarray;
+        model_name: str;
+        save_parameters: bool -> if True, saves some information in a .csv file;
+        learning_rate: float;
+        epochs: int;
+        factor: float;
+        patience_RLR: float;
+        patience_ES: float;
+        min_lr: float;
+        loss: str -> loss function;
+        batch_size: int;
+        monitor: str;
+        
+    return:
+        history: fitted model;
+    '''
+
     # Parameters
-    loss = 'binary_crossentropy'
-    optimizer = kopt.Adam(learning_rate)
-    batch_size = 256
-    monitor = 'val_loss'
-    # Callbacks parameters
-    factor = 0.5
-    patience_RLR = 10
-    patience_ES = 15
-    min_lr = 1e-6
+    optimizer = kopt.Adam(learning_rate) # nao da de mudar por keras.optimizers.kopt.Adam pois da erro. Acontece com outros modulos do Keras tbm.
 
     # Paths
     model_path = f'results/{model_name}/model.h5'
@@ -53,7 +69,7 @@ def training(
     model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
     # Training the model
-    print('Batch Size:', batch_size)
+
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
@@ -62,12 +78,12 @@ def training(
     )
 
     # Save the parameters
-    parameters = { 
-        'loss' : loss, 'optimizer' : optimizer, 'learning rate' : learning_rate,
-        'epochs' : epochs, 'batch size' : batch_size, 'factor' : factor, 
-        'patience RLR' : patience_RLR, 'patience ES': patience_ES, 'min LR' : min_lr
-    }
     if save_parameters == True:
+        parameters = {
+            'loss' : loss, 'optimizer' : optimizer, 'learning rate' : learning_rate,
+            'epochs' : epochs, 'batch size' : batch_size, 'factor' : factor, 
+            'patience RLR' : patience_RLR, 'patience ES': patience_ES, 'min LR' : min_lr
+        }
         pd.DataFrame.from_dict(data=parameters, orient='index').to_csv(csv_path_parameter, header=False)
 
     return history
