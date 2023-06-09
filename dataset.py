@@ -20,7 +20,6 @@ import wfdb # used to extract the ECG signal
 def load_data(df, data_folder, sampling_rate):
     
     '''
-    
     inputs:
         df: pandas.core.frame.DataFrame;
         data_folder: pathlib.PosixPath; 
@@ -28,7 +27,6 @@ def load_data(df, data_folder, sampling_rate):
         
     return:
         data: numpy.ndarray;
-        
     '''
     
     # Better to use pathlib instead of os and strings
