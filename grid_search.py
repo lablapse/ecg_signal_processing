@@ -1,6 +1,5 @@
 import itertools
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, CSVLogger
-from keras.layers import Input
 from keras.models import load_model
 from keras.optimizers import SGD, RMSprop, Adam
 import pandas as pd
@@ -21,7 +20,7 @@ def create_model(model_name, input_shape, optimizer, learning_rate):
     Returns:
         model: Compiled Keras model
     """
-    model = utils.get_model(Input(shape=input_shape), model_name)
+    model = utils.get_model(input_shape, model_name)
 
     # Choose the optimizer
     if optimizer == 'sgd':
