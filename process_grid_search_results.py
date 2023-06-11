@@ -18,12 +18,14 @@ df.head(10)
 def plot_f1_score_by_batch_size(df, model, learning_rates):
     
     '''
+    
         This function plots the f1-score from the grid_search.py file for each trained model.
         
     inputs:
         df: pandas.core.frame.DataFrame;
         model: str;
         learning_rate: float;
+        
     '''
     
     # Set up subplots
