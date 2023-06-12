@@ -218,7 +218,7 @@ class rajpurkar_torch(nn.Module):
         )
     
         # This applies to this module and all children of it. This line below initializes the 
-        # 'nn.Conv1d()' and 'nn.Linear()' weights.
+        # 'nn.Conv1d()', 'nn.Linear()' and 'nn.Sigmoid()' weights.
         self.apply(_weights_init)
     
     # Calculating "Rajpurkar's" model
@@ -249,27 +249,37 @@ class ribeiro_torch(nn.Module):
         self.downsample = downsample
     
         # Input block
-        
+        self.layer_initial = nn.Sequential(nn.Conv1d(in_channels=self.in_channels, out_channels=64, 
+                                                     kernel_size=16, stride=1, padding='same'),
+                                           nn.BatchNorm1d(num_features=64, eps=0.001, momentum=0.99),
+                                           nn.ReLU()
+        )
     
-        # Input block
-        layers = keras.Sequential([Conv1D(kernel_size=16, filters=64, strides=1,
-                                          padding="same", kernel_initializer=initializer),
-                                   BatchNormalization(),
-                                   ReLU()]
-                                   )(input_layer)
+        # The channels dimensions
+        self.num_channels = np.array([64, 128, 192, 256, 320])
         
-        num_filter = np.array([128, 192, 256, 320])
-
-        layer = layers
-        skip = layers
-
-        # Residual Blocks
+        # Crating the list that will receive the middle blocks
+        middle_layers_list = list()
+        
+        # Appending to 'middle_layers_list'
         for i in range(4):
-            layer, skip = residual_blocks_ribeiro(
-                [layer, skip], num_filter=num_filter[i], rate_drop=rate_drop, initializer=initializer, downsample=downsample
-            )
+            middle_layers_list.append(residual_blocks_ribeiro_torch(skip_connection_torch, self.num_channels[i], 
+                                                                    self.num_channels[i+1], self.rate_drop, self.downsample))
+        
+        # Creating the middle layers
+        self.layers_middle = nn.Sequential(middle_layers_list)
 
         # Output block
-        layer = Flatten()(layer)
-        classification = Dense(5, activation='sigmoid',
-                               kernel_initializer=initializer)(layer)
+        self.layer_end = nn.Sigmoid(1000, 5)
+            
+        # This applies to this module and all children of it. This line below initializes the 
+        # 'nn.Conv1d()', 'nn.Linear()' and 'nn.Sigmoid()' weights.
+        self.apply(_weights_init)
+
+    # Calculating "Ribeiro's" model
+    def forward(self, input):
+        input = self.layer_initial(input)
+        input = self.layers_middle((input, input))
+        out = self.layer_end(input[0])
+        return out
+    
