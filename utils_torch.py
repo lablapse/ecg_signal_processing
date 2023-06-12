@@ -1,9 +1,4 @@
 import numpy as np # some fundamental operations
-import pathlib # for the paths 
-import plot_utils as putils # importing custom code
-import pandas as pd # for .csv manipulation
-import seaborn as sns # used in some plotting
-import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
@@ -14,7 +9,7 @@ def _weights_init(m):
         Don't worry about 'm'.
     '''
     classname = m.__class__.__name__
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
+    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d) or isinstance(m, nn.Sigmoid):
         nn.init.kaiming_normal_(m.weight)
 
 # Creating the residual block to the Rajpurkar architecture
@@ -241,7 +236,7 @@ class ribeiro_torch(nn.Module):
     def __init__(self, rate_drop, in_channels, downsample):
         
         # Calling the nn.Module 'constructor' 
-        super(rajpurkar_torch, self).__init__()
+        super(ribeiro_torch, self).__init__()
         
         #Internalizing the values
         self.rate_drop = rate_drop
@@ -283,3 +278,16 @@ class ribeiro_torch(nn.Module):
         out = self.layer_end(input[0])
         return out
     
+# Creating a CustomDataset class to be used
+class CustomDataset(Dataset):
+    def __init__(self, data, labels):
+        self.data = data
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        current_sample = self.data[idx, :, :]
+        current_label = self.labels[idx, :]
+        return current_sample, current_label
