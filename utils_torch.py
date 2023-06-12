@@ -146,14 +146,16 @@ class rajpurkar_torch(nn.Module):
     '''
     
     # Passing values to the object
-    def __init__(self, rate_drop, in_channels):
+    def __init__(self, residual_blocks_rajpurkar_torch, rate_drop, in_channels):
+        
+        # Calling the nn.Module 'constructor' 
+        super(rajpurkar_torch, self).__init__()
         
         #Internalizing the values
         self.rate_drop = rate_drop
         self.in_channels = in_channels
+        self.residual_blocks_rajpurkar_torch = residual_blocks_rajpurkar_torch
         
-        # Calling the nn.Module 'constructor' 
-        super(rajpurkar_torch, self).__init__()
         
         # Creating a 'dict' with values that will be used multiple times in nn.Conv1d() function
         self.conv_config = dict(in_channels=self.out_channels, 
@@ -197,10 +199,10 @@ class rajpurkar_torch(nn.Module):
         
         # Appending the middle layers to the middle_layer_list
         for i in range(15):
-            middle_layers_list.append(residual_blocks_rajpurkar_torch(i=i, stride=(i%2)+1, 
-                                                                      in_channels=self.num_channels[i], 
-                                                                      out_channels=self.num_channels[i+1], 
-                                                                      rate_drop=self.rate_drop))
+            middle_layers_list.append(self.residual_blocks_rajpurkar_torch(i=i, stride=(i%2)+1, 
+                                                                           in_channels=self.num_channels[i], 
+                                                                           out_channels=self.num_channels[i+1], 
+                                                                           rate_drop=self.rate_drop))
         # Creating the 'nn.Sequential()' using the 'middle_layer_list'
         middle_layers_list = nn.ModuleList(middle_layers_list)
         self.middle_layers = nn.Sequential(middle_layers_list)
@@ -233,7 +235,7 @@ class ribeiro_torch(nn.Module):
     '''
     
     # Passing values to the object
-    def __init__(self, rate_drop, in_channels, downsample):
+    def __init__(self, residual_blocks_ribeiro_torch, rate_drop, in_channels, downsample):
         
         # Calling the nn.Module 'constructor' 
         super(ribeiro_torch, self).__init__()
@@ -242,6 +244,7 @@ class ribeiro_torch(nn.Module):
         self.rate_drop = rate_drop
         self.in_channels = in_channels
         self.downsample = downsample
+        self.residual_blocks_ribeiro_torch = residual_blocks_ribeiro_torch
     
         # Input block
         self.layer_initial = nn.Sequential(nn.Conv1d(in_channels=self.in_channels, out_channels=64, 
@@ -258,7 +261,7 @@ class ribeiro_torch(nn.Module):
         
         # Appending to 'middle_layers_list'
         for i in range(4):
-            middle_layers_list.append(residual_blocks_ribeiro_torch(skip_connection_torch, self.num_channels[i], 
+            middle_layers_list.append(self.residual_blocks_ribeiro_torch(skip_connection_torch, self.num_channels[i], 
                                                                     self.num_channels[i+1], self.rate_drop, self.downsample))
         
         # Creating the middle layers
@@ -291,3 +294,32 @@ class CustomDataset(Dataset):
         current_sample = self.data[idx, :, :]
         current_label = self.labels[idx, :]
         return current_sample, current_label
+    
+def creating_the_kwargs(model_name):
+    '''
+    
+    '''
+
+    # Selecting the model that will be called
+    if model_name == 'rajpurkar':
+        # Selecting "Rajpurkar's" model
+        model = rajpurkar_torch
+        arguments = dict(residual_blocks_rajpurkar_torch=residual_blocks_rajpurkar_torch,
+                         rate_drop=0.5,
+                         in_channels=12
+        )
+        
+    elif model_name == 'ribeiro':    
+        # Selecting "Ribeiro's" model
+        model = ribeiro_torch
+        arguments = dict(residual_blocks_ribeiro_torch=residual_blocks_ribeiro_torch,
+                         rate_drop=0.5,
+                        in_channels=12,
+                        downsample=1
+        )
+        
+    else:
+        # Raising an error if an invalid string was passed
+        raise NameError(" Wrong Name. Allowed names are 'rajpurkar' and 'ribeiro'. ") 
+    
+    return model, arguments
