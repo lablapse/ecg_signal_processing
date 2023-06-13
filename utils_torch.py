@@ -296,8 +296,11 @@ class CustomDataset(Dataset):
         return current_sample, current_label
     
 def creating_the_kwargs(model_name):
-    '''
     
+    '''
+    This fuction receives a string with the desidred model name and returns
+    the torch chass model with a dictionary of whats will later be **kwargs
+    to other function or class.
     '''
 
     # Selecting the model that will be called
@@ -314,8 +317,8 @@ def creating_the_kwargs(model_name):
         model = ribeiro_torch
         arguments = dict(residual_blocks_ribeiro_torch=residual_blocks_ribeiro_torch,
                          rate_drop=0.5,
-                        in_channels=12,
-                        downsample=1
+                         in_channels=12,
+                         downsample=1
         )
         
     else:

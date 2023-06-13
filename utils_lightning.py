@@ -68,5 +68,13 @@ class LitModel(pl.LightningModule):
         return pred
 
 def creating_the_model(model_kwargs):
-    model = LitModel(model[0], **model[1])
+    
+    '''
+    This function receives its inputs from the returned values of 
+    "utils_torch.py -> 'creating_the_kwargs'" function
+    and returns the selected model.
+    '''
+    
+    model = LitModel(model_kwargs[0], **model_kwargs[1])
+    return model
     
