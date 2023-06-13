@@ -1,6 +1,7 @@
 import numpy as np # some fundamental operations
 import torch.nn as nn
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
+import utils_general
 
 # Creating the kernel initializer for nn.Conv1d and nn.Linear 
 def _weights_init(m):
@@ -9,7 +10,7 @@ def _weights_init(m):
         Don't worry about 'm'.
     '''
     classname = m.__class__.__name__
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d) or isinstance(m, nn.Sigmoid):
+    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
         nn.init.kaiming_normal_(m.weight)
 
 # Creating the residual block to the Rajpurkar architecture
@@ -45,14 +46,14 @@ class residual_blocks_rajpurkar_torch(nn.Module):
                                    nn.ReLU(),
                                    nn.Dropout(p=self.rate_drop), # VER SE OS DROPOUTS ESTAO IGUAIS CONCEITUALMENTE -> torch: https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html keras -> https://keras.io/api/layers/regularization_layers/dropout/
                                    nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, kernel_size=16,
-                                             stride=stride, padding='same')
+                                             stride=stride)
         )
         
         # Creating the short connection
         if self.i == 3 or self.i == 7 or self.i == 11:
             self.skip = nn.Sequential(nn.Conv1d(in_channels=in_channels, out_channels=self.out_channels, kernel_size=16,
-                                             stride=1, padding='same'),
-                                 nn.MaxPool1d(kernel_size=1, stride=self.stride)
+                                                stride=1, padding='same'),
+                                                nn.MaxPool1d(kernel_size=1, stride=self.stride)
             )
         
         else:
@@ -158,20 +159,19 @@ class rajpurkar_torch(nn.Module):
         
         
         # Creating a 'dict' with values that will be used multiple times in nn.Conv1d() function
-        self.conv_config = dict(in_channels=self.out_channels, 
-                                out_channels=self.out_channels, 
-                                kernel_size=16, 
-                                padding='same'
+        self.conv_config = dict(in_channels=self.in_channels, 
+                                out_channels=64, 
+                                kernel_size=16
         )
         
         
         # Creating the first block
         self.layer_to_be_passed = nn.Sequential(nn.Conv1d(in_channels=self.in_channels,
-                                                          out_channels=self.out_channels,
+                                                          out_channels=64,
                                                           kernel_size=16, 
                                                           stride=1, 
                                                           padding='same'),
-                                                nn.BatchNorm1d(num_features=self.out_channels, 
+                                                nn.BatchNorm1d(num_features=64, 
                                                                eps=0.001, momentum=0.99),
                                                 nn.ReLU()
         )
@@ -180,15 +180,15 @@ class rajpurkar_torch(nn.Module):
         self.skip_alone = nn.MaxPool1d(kernel_size=1, stride=2)
         
         # Creating the second block
-        self.layer_to_be_summed = nn.Sequential(nn.Conv1d(stride=1, **self.conv_config),
-                                                nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
+        self.layer_to_be_summed = nn.Sequential(nn.Conv1d(stride=1, padding='same', **self.conv_config),
+                                                nn.BatchNorm1d(num_features=64, eps=0.001, momentum=0.99),
                                                 nn.ReLU(),
                                                 nn.Dropout(p=self.rate_drop),
                                                 nn.Conv1d(stride=2, **self.conv_config)            
         )
         
         # Creating the channels matrix that will be used to create the connection layers
-        self.num_channels = [64, 64, 64,
+        self.num_channels = [64, 64, 64, 64,
                              128, 128, 128, 128,
                              192, 192, 192, 192,
                              256, 256, 256, 256
@@ -211,11 +211,12 @@ class rajpurkar_torch(nn.Module):
         self.layer_end = nn.Sequential(nn.BatchNorm1d(num_features=self.num_channels[-1], eps=0.001, momentum=0.99),
                                        nn.ReLU(),
                                        nn.Linear(in_features=1000, out_features=32),
-                                       nn.Sigmoid(32, 5)
+                                       nn.Linear(in_features=32, out_features=5),
+                                       nn.Sigmoid()
         )
     
         # This applies to this module and all children of it. This line below initializes the 
-        # 'nn.Conv1d()', 'nn.Linear()' and 'nn.Sigmoid()' weights.
+        # 'nn.Conv1d()', 'nn.Linear()' weights.
         self.apply(_weights_init)
     
     # Calculating "Rajpurkar's" model
@@ -265,13 +266,15 @@ class ribeiro_torch(nn.Module):
                                                                     self.num_channels[i+1], self.rate_drop, self.downsample))
         
         # Creating the middle layers
+        middle_layers_list = nn.ModuleList(middle_layers_list)
         self.layers_middle = nn.Sequential(middle_layers_list)
 
         # Output block
-        self.layer_end = nn.Sigmoid(1000, 5)
+        self.layer_end = nn.Sequential(nn.Linear(1000, 5),
+                                       nn.Sigmoid())
             
         # This applies to this module and all children of it. This line below initializes the 
-        # 'nn.Conv1d()', 'nn.Linear()' and 'nn.Sigmoid()' weights.
+        # 'nn.Conv1d()', 'nn.Linear()' weights.
         self.apply(_weights_init)
 
     # Calculating "Ribeiro's" model
@@ -295,6 +298,51 @@ class CustomDataset(Dataset):
         current_label = self.labels[idx, :]
         return current_sample, current_label
     
+# Function that will load the data and return a custom dataloader
+def creating_datasets(test=False):
+    
+    '''
+    
+    '''
+    # Loading the data
+    info = utils_general.load_data(test)
+    
+    # List that will receive the datasets
+    datasets = list()
+    
+    # Appending the train dataset
+    datasets.append(CustomDataset(info[0], info[1]))
+    
+    # Appending the validation dataset
+    datasets.append(CustomDataset(info[2], info[3]))
+    
+    if test:
+        # Appending the test dataset
+        datasets.append(CustomDataset(info[4], info[5]))
+        
+    return datasets
+    
+# Creating the Dataloaders using torch
+def creating_dataloaders(datasets, batch_size):
+    
+    '''
+    '''
+    
+    dataloaders = list()
+    
+    # Creating the train DataLoader
+    dataloaders.append(DataLoader(datasets[0], batch_size=batch_size))
+    
+    # Creating the validation DataLoader
+    dataloaders.append(DataLoader(datasets[1], batch_size=batch_size))
+    
+    if len(datasets) == 3:
+        # Creating the test DataLoader
+        dataloaders.append(DataLoader(datasets[1], batch_size=batch_size))
+        
+    return dataloaders
+        
+
 def creating_the_kwargs(model_name):
     
     '''

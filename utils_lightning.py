@@ -77,4 +77,3 @@ def creating_the_model(model_kwargs):
     
     model = LitModel(model_kwargs[0], **model_kwargs[1])
     return model
-    
