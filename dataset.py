@@ -142,6 +142,11 @@ y_train = Y[metadata.strat_fold.values < val_fold]
 metadata.to_csv('metadata.csv', index=False)
 meta_scp.to_csv('metadata_scp.csv', index=False)
 
+# Transposing dimensions to work correctly with Pytorch
+X_train = np.transpose(X_train, axes=(0, 2, 1))
+X_test = np.transpose(X_test, axes=(0, 2, 1))
+X_val = np.transpose(X_val, axes=(0, 2, 1))
+
 # Prepare data for saving
 data = dict(
     X_train=X_train.astype('float32'),

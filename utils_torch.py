@@ -37,7 +37,7 @@ class residual_blocks_rajpurkar_torch(nn.Module):
         
         # Creating the layer
         # Some default 'torch.nn' values were modified to match the default ones presented in 'keras' 
-        self.layer = nn.Sequential(nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
+        self.layer = nn.Sequential(nn.BatchNorm1d(num_features=self.in_channels, eps=0.001, momentum=0.99),
                                    nn.ReLU(),
                                    nn.Dropout(p=self.rate_drop), # VER SE OS DROPOUTS ESTAO IGUAIS CONCEITUALMENTE -> torch: https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html keras -> https://keras.io/api/layers/regularization_layers/dropout/
                                    nn.Conv1d(in_channels=in_channels, out_channels=self.out_channels, kernel_size=16,
@@ -46,7 +46,7 @@ class residual_blocks_rajpurkar_torch(nn.Module):
                                    nn.ReLU(),
                                    nn.Dropout(p=self.rate_drop), # VER SE OS DROPOUTS ESTAO IGUAIS CONCEITUALMENTE -> torch: https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html keras -> https://keras.io/api/layers/regularization_layers/dropout/
                                    nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, kernel_size=16,
-                                             stride=stride)
+                                             stride=stride, padding=7)
         )
         
         # Creating the short connection
@@ -63,6 +63,8 @@ class residual_blocks_rajpurkar_torch(nn.Module):
     def forward(self, input):
         out = self.layer(input)
         short = self.skip(input)
+        if out.shape[2] != short.shape[2]:
+            out = nn.functional.pad(out, (0,1))
         out = out + short
         return out
     
@@ -85,7 +87,7 @@ class skip_connection_torch(nn.Module):
         self.downsample = downsample
     
         # Creating the short connection
-        self.skip = nn.Sequential(nn.MaxPool1d(kernel_size=self.downsample, stride=self.downsample, padding='same'),
+        self.skip = nn.Sequential(nn.MaxPool1d(kernel_size=self.downsample, stride=self.downsample),
                                   nn.Conv1d(in_channels=self.in_channels, out_channels=self.out_channels, 
                                             kernel_size=1, stride=1, padding='same')
         )
@@ -159,7 +161,7 @@ class rajpurkar_torch(nn.Module):
         
         
         # Creating a 'dict' with values that will be used multiple times in nn.Conv1d() function
-        self.conv_config = dict(in_channels=self.in_channels, 
+        self.conv_config = dict(in_channels=64, 
                                 out_channels=64, 
                                 kernel_size=16
         )
@@ -184,7 +186,7 @@ class rajpurkar_torch(nn.Module):
                                                 nn.BatchNorm1d(num_features=64, eps=0.001, momentum=0.99),
                                                 nn.ReLU(),
                                                 nn.Dropout(p=self.rate_drop),
-                                                nn.Conv1d(stride=2, **self.conv_config)            
+                                                nn.Conv1d(stride=2, **self.conv_config, padding=7)            
         )
         
         # Creating the channels matrix that will be used to create the connection layers
@@ -205,12 +207,13 @@ class rajpurkar_torch(nn.Module):
                                                                            rate_drop=self.rate_drop))
         # Creating the 'nn.Sequential()' using the 'middle_layer_list'
         middle_layers_list = nn.ModuleList(middle_layers_list)
-        self.middle_layers = nn.Sequential(middle_layers_list)
+        self.middle_layers = nn.Sequential(*middle_layers_list)
         
         # End layer
         self.layer_end = nn.Sequential(nn.BatchNorm1d(num_features=self.num_channels[-1], eps=0.001, momentum=0.99),
                                        nn.ReLU(),
-                                       nn.Linear(in_features=1000, out_features=32),
+                                       nn.Flatten(),
+                                       nn.Linear(in_features=1024, out_features=32),
                                        nn.Linear(in_features=32, out_features=5),
                                        nn.Sigmoid()
         )
@@ -226,7 +229,7 @@ class rajpurkar_torch(nn.Module):
         layer = self.layer_to_be_summed(layer)
         out = layer + skip
         out = self.middle_layers(out)
-        self.layer_end(out)
+        out = self.layer_end(out)
         return out
     
 class ribeiro_torch(nn.Module):
@@ -236,7 +239,7 @@ class ribeiro_torch(nn.Module):
     '''
     
     # Passing values to the object
-    def __init__(self, residual_blocks_ribeiro_torch, rate_drop, in_channels, downsample):
+    def __init__(self, residual_blocks_ribeiro_torch, skip_connection_torch, rate_drop, in_channels, downsample):
         
         # Calling the nn.Module 'constructor' 
         super(ribeiro_torch, self).__init__()
@@ -246,6 +249,7 @@ class ribeiro_torch(nn.Module):
         self.in_channels = in_channels
         self.downsample = downsample
         self.residual_blocks_ribeiro_torch = residual_blocks_ribeiro_torch
+        self.skip_connection_torch = skip_connection_torch
     
         # Input block
         self.layer_initial = nn.Sequential(nn.Conv1d(in_channels=self.in_channels, out_channels=64, 
@@ -262,15 +266,16 @@ class ribeiro_torch(nn.Module):
         
         # Appending to 'middle_layers_list'
         for i in range(4):
-            middle_layers_list.append(self.residual_blocks_ribeiro_torch(skip_connection_torch, self.num_channels[i], 
-                                                                    self.num_channels[i+1], self.rate_drop, self.downsample))
+            middle_layers_list.append(self.residual_blocks_ribeiro_torch(self.skip_connection_torch, self.num_channels[i], 
+                                                                         self.num_channels[i+1], self.rate_drop, self.downsample))
         
         # Creating the middle layers
         middle_layers_list = nn.ModuleList(middle_layers_list)
-        self.layers_middle = nn.Sequential(middle_layers_list)
+        self.layers_middle = nn.Sequential(*middle_layers_list)
 
         # Output block
-        self.layer_end = nn.Sequential(nn.Linear(1000, 5),
+        self.layer_end = nn.Sequential(nn.Flatten(),
+                                       nn.Linear(1000, 5),
                                        nn.Sigmoid())
             
         # This applies to this module and all children of it. This line below initializes the 
@@ -288,7 +293,8 @@ class ribeiro_torch(nn.Module):
 class CustomDataset(Dataset):
     def __init__(self, data, labels):
         self.data = data
-        self.labels = labels
+        # Converting to float because of BCELoss from Pytorch
+        self.labels = labels.astype(np.float32)
 
     def __len__(self):
         return len(self.data)
@@ -364,6 +370,7 @@ def creating_the_kwargs(model_name):
         # Selecting "Ribeiro's" model
         model = ribeiro_torch
         arguments = dict(residual_blocks_ribeiro_torch=residual_blocks_ribeiro_torch,
+                         skip_connection_torch=skip_connection_torch,
                          rate_drop=0.5,
                          in_channels=12,
                          downsample=1

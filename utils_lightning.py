@@ -1,7 +1,6 @@
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
-import utils_torch
 
 # Creating the Lightning class to have access to some convenient features
 class LitModel(pl.LightningModule):
@@ -19,10 +18,10 @@ class LitModel(pl.LightningModule):
         self.model = model(**kwargs)
         
         # Selecting the loss function
-        self.metric = torch.nn.MultiLabelSoftMarginLoss(
-            weight=None, reduction='mean'
-        )
-        # self.metric = torch.nn.BCELoss()
+        # self.metric = torch.nn.MultiLabelSoftMarginLoss(
+        #     weight=None, reduction='mean'
+        # )
+        self.metric = torch.nn.BCELoss()
 
     # Creating the 'forward()' function
     def forward(self, input):
