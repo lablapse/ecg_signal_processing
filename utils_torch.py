@@ -128,6 +128,8 @@ class residual_blocks_ribeiro_torch(nn.Module):
                                                  kernel_size=16, stride=self.downsample, padding='same')            
         )
         
+        self.layer_middle = self.skip_connection(self.in_channels, self.out_channels, self.downsample)
+        
         self.layer_alone = nn.Sequential(nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
                                          nn.ReLU(),
                                          nn.Dropout(p=self.rate_drop)
@@ -135,7 +137,7 @@ class residual_blocks_ribeiro_torch(nn.Module):
         
     def forward(self, input):
         layer, skip = input
-        skip = self.skip_connection(self.in_channels, self.out_channels, self.downsample)(skip)
+        skip = self.layer_middle(skip)
         layer = self.layer_sum(layer)
         layer = layer + skip
         skip = layer
@@ -197,7 +199,7 @@ class rajpurkar_torch(nn.Module):
         ]
         
         # Creating the list that will append the middle layers
-        middle_layers_list = list()
+        middle_layers_list = nn.ModuleList()
         
         # Appending the middle layers to the middle_layer_list
         for i in range(15):
@@ -206,7 +208,6 @@ class rajpurkar_torch(nn.Module):
                                                                            out_channels=self.num_channels[i+1], 
                                                                            rate_drop=self.rate_drop))
         # Creating the 'nn.Sequential()' using the 'middle_layer_list'
-        middle_layers_list = nn.ModuleList(middle_layers_list)
         self.middle_layers = nn.Sequential(*middle_layers_list)
         
         # End layer
@@ -262,7 +263,7 @@ class ribeiro_torch(nn.Module):
         self.num_channels = np.array([64, 128, 192, 256, 320])
         
         # Crating the list that will receive the middle blocks
-        middle_layers_list = list()
+        middle_layers_list = nn.ModuleList()
         
         # Appending to 'middle_layers_list'
         for i in range(4):
@@ -270,12 +271,11 @@ class ribeiro_torch(nn.Module):
                                                                          self.num_channels[i+1], self.rate_drop, self.downsample))
         
         # Creating the middle layers
-        middle_layers_list = nn.ModuleList(middle_layers_list)
         self.layers_middle = nn.Sequential(*middle_layers_list)
 
         # Output block
         self.layer_end = nn.Sequential(nn.Flatten(),
-                                       nn.Linear(1000, 5),
+                                       nn.Linear(320000, 5),
                                        nn.Sigmoid())
             
         # This applies to this module and all children of it. This line below initializes the 
