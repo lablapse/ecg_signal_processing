@@ -28,15 +28,18 @@ class LitModel(pl.LightningModule):
         # this calls the 'forward()' function of the selected model
         return self.model.forward(input)
 
-    # def configure_optimizers(self):
-    #     optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-    #     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    #     return [optimizer], [lr_scheduler]
-
     # This selects the optimizer and the learning rate of the selected model
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-5)
-        return [optimizer]
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.1)
+        self.schedular = {'scheduler':torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer,
+            mode='min',
+            factor=0.5,
+            patience=10,
+            min_lr=1e-6,
+            verbose=True
+        ), 'monitor':'val_loss'}
+        return {'optimizer': self.optimizer, 'lr_scheduler': self.schedular}
 
     # Creating the training step
     def training_step(self, batch, batch_idx):

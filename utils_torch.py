@@ -294,7 +294,7 @@ class CustomDataset(Dataset):
     def __init__(self, data, labels):
         self.data = data
         # Converting to float because of BCELoss from Pytorch
-        self.labels = labels.astype(np.float32)
+        self.labels = labels
 
     def __len__(self):
         return len(self.data)
@@ -305,16 +305,24 @@ class CustomDataset(Dataset):
         return current_sample, current_label
     
 # Function that will load the data and return a custom dataloader
-def creating_datasets(test=False):
+def creating_datasets(test=False, only_test=False):
     
     '''
     
     '''
+    
+    if only_test:
+        test = True
+    
     # Loading the data
     info = utils_general.load_data(test)
     
     # List that will receive the datasets
     datasets = list()
+    
+    if only_test:
+        datasets.append(CustomDataset(info[4], info[5]))
+        return datasets
     
     # Appending the train dataset
     datasets.append(CustomDataset(info[0], info[1]))
@@ -333,6 +341,9 @@ def creating_dataloaders(datasets, batch_size):
     
     '''
     '''
+    
+    if len(datasets) == 1:
+        raise ValueError('Datasets must contain at least training and validation to create the DataLoaders.')
     
     dataloaders = list()
     

@@ -5,6 +5,7 @@
 *.npy
 *.csv
 *.h5
+*.gv
 
 # Figures
 *.png
@@ -12,6 +13,11 @@
 
 # ECG dataset
 ptbxl/
+
+# Folders
+lightning_logs/
+results
+saved_models
 
 # VSCode
 .vscode/

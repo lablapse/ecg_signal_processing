@@ -150,11 +150,11 @@ X_val = np.transpose(X_val, axes=(0, 2, 1))
 # Prepare data for saving
 data = dict(
     X_train=X_train.astype('float32'),
-    y_train=y_train.astype('int8'),
+    y_train=y_train.astype('float32'),
     X_val=X_val.astype('float32'),
-    y_val=y_val.astype('int8'),
+    y_val=y_val.astype('float32'),
     X_test=X_test.astype('float32'),
-    y_test=y_test.astype('int8')
+    y_test=y_test.astype('float32')
 )
 
 # Save data as compressed numpy binaries
