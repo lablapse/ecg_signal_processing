@@ -1,22 +1,12 @@
+import gc 
 import itertools
+import mlcm
 import pandas as pd
 import pathlib, os
-import mlcm
-
-import gc
-import matplotlib.pyplot as plt
-import mlcm
-import numpy as np
-import torch
-import tqdm
-import utils_lightning
-import utils_general
-import utils_torch
-
-from datetime import datetime
 import pytorch_lightning as pl
 import pytorch_lightning.callbacks as callback
 import torch
+import utils_general
 import utils_lightning
 import utils_torch
 
@@ -24,7 +14,7 @@ gc.collect()
 torch.cuda.empty_cache()
 
 '''
-This script runs several scenarios of training with multiples hiperparameters. 
+This script runs several scenarios of training with multiples hiperparameters and saves some metrics in a .csv file.
 '''
 
 def save_results_to_csv(results, csv_file_path):

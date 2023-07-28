@@ -5,6 +5,10 @@ import torch
 import utils_lightning
 import utils_torch
 
+'''
+This script trains one model and saves the weights in 'saved_models'.
+'''
+
 # Choosing one of the models to train, Ribeiro or Rajpurkar
 model_name = 'ribeiro'
 # model_name = 'rajpurkar'
@@ -22,15 +26,6 @@ dataloaders = utils_torch.creating_dataloaders(datasets, batch_size)
 # Creating the model
 arguments = utils_torch.creating_the_kwargs(model_name, torch.optim.Adam, learning_rate=0.001)
 model = utils_lightning.creating_the_model(arguments)
-
-# # Saving a pdf with the image of the model
-# model_graph = torchview.draw_graph(model, input_size=(1, datasets[0].data.shape[1], datasets[0].data.shape[2]),
-#                                    graph_name=f'{model_name}', hide_module_functions=False, depth=100)
-# model_graph.visual_graph
-# model_graph.visual_graph.save()
-# dot = graphviz.Source.from_file(f'{model_name}.gv')
-# dot.render()
-# del dot
 
 # Defining callbacks
 # Checkpointing the model

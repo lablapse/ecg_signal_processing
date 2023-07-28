@@ -1,5 +1,9 @@
 ################### Custom ####################
 
+# Python Scripts
+grid_search.py
+utils.py
+
 # Data
 *.npz
 *.npy

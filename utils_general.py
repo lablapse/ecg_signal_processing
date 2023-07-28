@@ -376,9 +376,3 @@ def gv_and_pdf_model(model, model_name, shape1, shape2):
     dot = graphviz.Source.from_file(f'{model_name}.gv')
     dot.render()
     return
-
-def generate_metrics_of_a_saved_model():
-    '''
-    VOLTAR AQUI
-    '''
-    return
