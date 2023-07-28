@@ -17,6 +17,7 @@ ptbxl/
 # Folders
 lightning_logs/
 results
+results_antigos_nao_deve_ser_considerado
 saved_models
 
 # VSCode

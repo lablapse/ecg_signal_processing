@@ -1,6 +1,9 @@
+import gc
 import numpy as np # some fundamental operations
+import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
+import tqdm
 import utils_general
 
 # Creating the kernel initializer for nn.Conv1d and nn.Linear 
@@ -17,10 +20,16 @@ def _weights_init(m):
 class residual_blocks_rajpurkar_torch(nn.Module):
     
     '''
-    This class creates the residual block for the Rajpurkar architecture
+    This class creates the residual block for the Rajpurkar architecture.
     
     inputs in __init__:
-
+        All the inputs are passed by other functions/classes
+    
+        i: int;
+        stride: int;
+        in_channels: int;
+        out_channels: int;
+        rate_drop: float;
     '''
     # Passing values to the object
     def __init__(self, i=0, stride=1, in_channels=64, out_channels=64, rate_drop=0.5):
@@ -72,7 +81,11 @@ class skip_connection_torch(nn.Module):
     
     '''
     inputs in __init__():
-
+        All the inputs are passed by other functions/classes.
+        
+        in_channels: int;
+        out_channels: int;
+        downsample: int;
     '''
     
     # Passing values to the object
@@ -102,7 +115,14 @@ class skip_connection_torch(nn.Module):
 class residual_blocks_ribeiro_torch(nn.Module):
     
     '''
+    inputs in __init__():
+        All the inputs are passed by other functions/classes.
 
+        skip_connection: 
+        in_channels: int;
+        out_channels: int;
+        rate_drop: float;
+        downsample: int;
     '''
     
     # Passing values to the object
@@ -124,8 +144,10 @@ class residual_blocks_ribeiro_torch(nn.Module):
                                        nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
                                        nn.ReLU(),
                                        nn.Dropout(p=self.rate_drop),
+                                    #    nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, 
+                                    #              kernel_size=16, stride=self.downsample, padding='same')            
                                        nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, 
-                                                 kernel_size=16, stride=self.downsample, padding='same')            
+                                                 kernel_size=16, stride=self.downsample, padding=7)            
         )
         
         self.layer_middle = self.skip_connection(self.in_channels, self.out_channels, self.downsample)
@@ -139,6 +161,8 @@ class residual_blocks_ribeiro_torch(nn.Module):
         layer, skip = input
         skip = self.layer_middle(skip)
         layer = self.layer_sum(layer)
+        if layer.shape[2] != skip.shape[2]:
+            skip = nn.functional.pad(skip, (0,1))
         layer = layer + skip
         skip = layer
         layer = self.layer_alone(layer)
@@ -148,6 +172,10 @@ class rajpurkar_torch(nn.Module):
     
     '''
     This class implements the Rajpurkar model like-wise was made by Sarah
+    inputs in __init__():
+        residual_blocks_rajpurkar_torch:
+        rate_drop: float;
+        in_channels: int; 
     '''
     
     # Passing values to the object
@@ -237,6 +265,12 @@ class ribeiro_torch(nn.Module):
     
     '''
     This class implements the Ribeiro model like-wise was made by Sarah
+    inputs in __init__():
+        residual_blocks_ribeiro_torch:
+        skip_connection_torch:
+        rate_drop: float;
+        in_channels: int;
+        downsample: int;
     '''
     
     # Passing values to the object
@@ -275,7 +309,7 @@ class ribeiro_torch(nn.Module):
 
         # Output block
         self.layer_end = nn.Sequential(nn.Flatten(),
-                                       nn.Linear(320000, 5),
+                                       nn.Linear(1280, 5),
                                        nn.Sigmoid())
             
         # This applies to this module and all children of it. This line below initializes the 
@@ -289,7 +323,7 @@ class ribeiro_torch(nn.Module):
         out = self.layer_end(input[0])
         return out
     
-# Creating a CustomDataset class to be used
+# Creating a CustomDataset class to be used.
 class CustomDataset(Dataset):
     def __init__(self, data, labels):
         self.data = data
@@ -308,7 +342,15 @@ class CustomDataset(Dataset):
 def creating_datasets(test=False, only_test=False):
     
     '''
+    This function calls the function load_data from utils_general.py and creates
+    custom datasets.
     
+    inputs:
+        test: bool -> True if the test dataset is desired, False if it's not;
+        only_test: bool -> True if just the test dataset is desired;
+ 
+    return:
+        returns a list of the train, val and/or test of the custom datasets;
     '''
     
     if only_test:
@@ -340,6 +382,14 @@ def creating_datasets(test=False, only_test=False):
 def creating_dataloaders(datasets, batch_size):
     
     '''
+    This function creates DataLoaders to be used with Pytorch.
+    
+    inputs:
+        datasets: the list returned from 'creating_datasets'. A list of CustomDataset.
+        batch_size: int -> the batch size used;
+        
+    return:
+        dataloaders: a list of the created DataLoaders.
     '''
     
     if len(datasets) == 1:
@@ -360,13 +410,15 @@ def creating_dataloaders(datasets, batch_size):
     return dataloaders
         
 
-def creating_the_kwargs(model_name):
+def creating_the_kwargs(model_name, optimizer, learning_rate):
     
     '''
-    This fuction receives a string with the desidred model name and returns
-    the torch chass model with a dictionary of whats will later be **kwargs
-    to other function or class.
+    This fuction receives a string with the desidred model name, a optimizer funtion from torch.optim, 
+    a desired learning rate and returns the torch class model with a dictionary of what will 
+    later be **kwargs to other function or class, and the same optimizer function and learning rate passed
+    as a argument to this function.
     '''
+
 
     # Selecting the model that will be called
     if model_name == 'rajpurkar':
@@ -384,11 +436,75 @@ def creating_the_kwargs(model_name):
                          skip_connection_torch=skip_connection_torch,
                          rate_drop=0.5,
                          in_channels=12,
-                         downsample=1
+                         downsample=4
         )
         
     else:
         # Raising an error if an invalid string was passed
         raise NameError(" Wrong Name. Allowed names are 'rajpurkar' and 'ribeiro'. ") 
     
-    return model, arguments
+    optim = optimizer
+    
+    return model, arguments, optim, learning_rate
+
+class ClearCache:
+    def __enter__(self):
+        gc.collect()
+        torch.cuda.empty_cache()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        gc.collect()
+        torch.cuda.empty_cache()
+        
+def computate_predictions(model, dataset, size_test):
+    # Creating the list that will receive the predictions
+    prediction_bin = np.empty(dataset.labels.shape)
+
+    if dataset.labels.shape[0] <= size_test:
+        size_test = dataset.labels.shape[0]
+
+    # Iterating trought the dataset. I was having GPU memory issues, so I made the code this way.
+    # The must have a proper way to do this.
+    for i in tqdm.tqdm(range(dataset.labels.shape[0]//size_test)):
+        with ClearCache():
+            first = (i*size_test)
+            second = ((i+1)*size_test)
+            
+            passing = torch.tensor(dataset.data[first:second]).cuda()
+            # Passing data to the loaded model and collecting the result
+            prediction = model(passing)
+            del passing
+                                            
+            # Moving the data from cuda to cpu because I was having some issues with numpy
+            prediction = prediction.to('cpu')
+            
+            # Converting to numpy array
+            prediction = prediction.detach().numpy()
+            
+            # Applying a threshold to the data and appending to prediction_bin
+            prediction_bin[first:second] = (prediction > 0.5).astype(np.float32)
+
+            # deleting prediction. Don't know if it's necessary.
+            del prediction
+        
+    if (dataset.labels.shape[0]//size_test)*size_test != dataset.labels.shape[0]:
+        first = ((dataset.labels.shape[0]//size_test))*size_test
+        with ClearCache():
+            passing = torch.tensor(dataset.data[first:-1]).cuda()
+            # Passing data to the loaded model and collecting the result
+            prediction = model(passing)
+            del passing
+            
+            # Moving the data from cuda to cpu because I was having some issues with numpy
+            prediction = prediction.to('cpu')
+            
+            # Converting to numpy array
+            prediction = prediction.detach().numpy()
+            
+            # Applying a threshold to the data and appending to prediction_bin
+            prediction_bin[first:-1] = (prediction > 0.5).astype(np.float32)
+            
+            # deleting prediction. Don't know if it's necessary.
+            del prediction
+        
+    return prediction_bin

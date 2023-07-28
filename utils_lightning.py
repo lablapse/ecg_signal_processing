@@ -1,12 +1,18 @@
 import pytorch_lightning as pl
 import torch
-import torch.nn.functional as F
 
 # Creating the Lightning class to have access to some convenient features
 class LitModel(pl.LightningModule):
     
+    '''
+    inputs in __init__():
+        model: the model that will be used;
+        optimizer: torch.optim. that will be used;
+        **kwargs: key-arguments that will be used to properly create the passed model;
+    '''
+    
     # Passing values to the __init()__ function
-    def __init__(self, model, **kwargs):
+    def __init__(self, model, optimizer, learning_rate, **kwargs):
         
         # Calling the pl.LightningModule 'constructor'
         super(LitModel, self).__init__()
@@ -14,14 +20,14 @@ class LitModel(pl.LightningModule):
         # Saving hiperparameters
         self.save_hyperparameters()
         
-        # Internalizing the model passed
+        # Internalizing inputed the model
         self.model = model(**kwargs)
         
         # Selecting the loss function
-        # self.metric = torch.nn.MultiLabelSoftMarginLoss(
-        #     weight=None, reduction='mean'
-        # )
         self.metric = torch.nn.BCELoss()
+        
+        self.optimizer_function = optimizer
+        self.learning_rate = learning_rate
 
     # Creating the 'forward()' function
     def forward(self, input):
@@ -30,7 +36,7 @@ class LitModel(pl.LightningModule):
 
     # This selects the optimizer and the learning rate of the selected model
     def configure_optimizers(self):
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.1)
+        self.optimizer = self.optimizer_function(self.parameters(), lr=self.learning_rate)
         self.schedular = {'scheduler':torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer,
             mode='min',
@@ -77,5 +83,5 @@ def creating_the_model(model_kwargs):
     and returns the selected model.
     '''
     
-    model = LitModel(model_kwargs[0], **model_kwargs[1])
+    model = LitModel(model_kwargs[0], model_kwargs[2], model_kwargs[3], **model_kwargs[1])
     return model

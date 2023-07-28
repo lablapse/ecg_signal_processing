@@ -1,10 +1,12 @@
 # Python packages
+import graphviz
 import matplotlib.pyplot as plt # for plotting
 import numpy as np # some fundamental operations
 import pathlib # for the paths 
 import plot_utils as putils # importing custom code
 import pandas as pd # for .csv manipulation
 import seaborn as sns # used in some plotting
+import torchview #https://github.com/mert-kurttutan/torchview
 
 # Plot results
 def plot_results(history, name, metric, plot_path='plots'):
@@ -226,7 +228,13 @@ def load_data(test=False):
 
 def get_mlcm_report(conf_mat, target_names, model_name):
     '''
-    This function is a modified version of the 'stats' function presented in the mlcl paper.
+    This function is a modified version of the 'stats' function presented in the mlcm paper.
+    
+    About mlcm:
+    Please read the following paper for more information:\
+    M. Heydarian, T. Doyle, and R. Samavi, MLCM: Multi-Label Confusion Matrix, 
+    IEEE Access, Feb. 2022, DOI: 10.1109/ACCESS.2022.3151048
+
     
     inputs:
         conf_mat: numpy.ndarray -> the 'conf_mat' returned from the 'cm' function of the 'mlcm' paper;
@@ -345,4 +353,32 @@ def get_mlcm_report(conf_mat, target_names, model_name):
         
     pd.DataFrame.from_dict(d, orient='index').to_csv(csv_report)
 
+    return
+
+def gv_and_pdf_model(model, model_name, shape1, shape2):
+    
+    '''
+    This function generates a .gv and a PDF file with an image of the structure of the passes model
+    
+    inputs: model -> 
+    model_name: str;
+    shape1: int;
+    shape2: int;
+    '''
+    
+    # Saving a .gv of the model
+    model_graph = torchview.draw_graph(model, input_size=(1, shape1, shape2),
+                                    graph_name=f'{model_name}', hide_module_functions=False, depth=100)
+    # I need to check if this line of code below is really necessary
+    model_graph.visual_graph
+    model_graph.visual_graph.save()
+    # Saving a PDF of the model
+    dot = graphviz.Source.from_file(f'{model_name}.gv')
+    dot.render()
+    return
+
+def generate_metrics_of_a_saved_model():
+    '''
+    VOLTAR AQUI
+    '''
     return

@@ -2,18 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+'''
+This script opens a .csv file and plot the f1-scores by learning rate, model, optimizer and batch size.
+'''
+
 # Load the csv file
-df = pd.read_csv('grid_search_results.csv')
+df = pd.read_csv('grid_search_results_torch.csv')
 
 # Drop columns that are not needed
 columns_to_drop = ['index', 'train_loss', 'train_accuracy', 'train_precision_macro_avg',\
                     'train_recall_macro_avg', 'train_f1_score_macro_avg','val_loss',\
                     'val_accuracy','val_precision_macro_avg', 'val_recall_macro_avg']
-
 df.drop(columns=columns_to_drop, axis=1, inplace=True)
-
-# Exhibit the first 10 rows
-df.head(10)
 
 def plot_f1_score_by_batch_size(df, model, learning_rates):
     
@@ -21,9 +21,9 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
         This function plots the f1-score from the grid_search.py file for each trained model.
         
     inputs:
-        df: pandas.core.frame.DataFrame;
+        df: pandas.core.frame.DataFrame from the cleaned .csv file;
         model: str;
-        learning_rate: float;
+        learning_rate: list of floats;
     '''
     
     # Set up subplots
@@ -75,6 +75,9 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
     # Creating the legend about the 'optimizer' values at the upper center of the figure
     fig.legend(handles, ['Adam', 'RMSProp', 'SGD'], loc='upper center',\
                ncol=len(data), bbox_to_anchor=(0.5, 1.0), edgecolor='none', facecolor='none')
+    
+    # Saving the Figure
+    fig.savefig(f'{model}.png')
     
     # Showing the created figure
     plt.show()
