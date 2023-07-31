@@ -93,9 +93,12 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     print(f'{index} | Modelo: {model_name} | Batch size: {batch_size} | Otimizador: {optimizer} | Learning rate: {learning_rate}')
     print('######################################################################################')
 
+
+    # Loading the data
     datasets = utils_torch.creating_datasets()
     dataloaders = utils_torch.creating_dataloaders(datasets, batch_size)
 
+    # Creating the models
     arguments = utils_torch.creating_the_kwargs(model_name, optimizer, learning_rate)
     model = utils_lightning.creating_the_model(arguments)
 
@@ -115,6 +118,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     model_path.parent.mkdir(parents=True, exist_ok=True)
     model_path_complete.parent.mkdir(parents=True, exist_ok=True)
 
+    # Checkpoint callback to save the model
     checkpoint_callback = callback.ModelCheckpoint(dirpath=model_path, filename='model', 
                                                 monitor='train_loss', save_top_k=1, mode='min')
     # Receiving information from the model
@@ -123,7 +127,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     # Early stopping callback
     early_stopping_callback = callback.EarlyStopping(monitor="val_loss", mode="min", patience=10)
 
-    # Accumulating callbacks in a list()
+    # Accumulating callbacks in a list
     callbacks = [checkpoint_callback, rich_callback, early_stopping_callback]
 
     # Defining the trainer from pytorch lightning
@@ -132,10 +136,12 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     # Fitting the model
     trainer.fit(model, train_dataloaders=dataloaders[0], val_dataloaders=dataloaders[1])
     
+    # Loading the model
     loaded_model = utils_lightning.LitModel.load_from_checkpoint(model_path_complete)
     loaded_model.eval()
     loaded_model.freeze()
     
+    # Computating the training predictions
     prediction_bin_train = utils_torch.computate_predictions(loaded_model, datasets[0], 5000)
 
     # Get the report using the MLCM confusion matrix
@@ -144,6 +150,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     d_train = utils_general.get_mlcm_metrics(cm)
     del prediction_bin_train
     
+    # Computating the validation predictions
     prediction_bin_val = utils_torch.computate_predictions(loaded_model, datasets[1], 5000)
 
     # Get the report using the MLCM confusion matrix
@@ -152,6 +159,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     d_val = utils_general.get_mlcm_metrics(cm)
     del prediction_bin_val
 
+    # This dictionary will be transformed into the .csv file
     current_result = {
                     'model_name': model_name,
                     'index': index,
