@@ -2,6 +2,7 @@ import gc
 import numpy as np # some fundamental operations
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import tqdm
 import utils_general
@@ -53,10 +54,11 @@ class residual_blocks_rajpurkar_torch(nn.Module):
                                              stride=1, padding='same'),
                                    nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
                                    nn.ReLU(),
-                                   nn.Dropout(p=self.rate_drop), # VER SE OS DROPOUTS ESTAO IGUAIS CONCEITUALMENTE -> torch: https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html keras -> https://keras.io/api/layers/regularization_layers/dropout/
-                                   nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, kernel_size=16,
-                                             stride=stride, padding=7)
+                                   nn.Dropout(p=self.rate_drop) # VER SE OS DROPOUTS ESTAO IGUAIS CONCEITUALMENTE -> torch: https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html keras -> https://keras.io/api/layers/regularization_layers/dropout/
         )
+        
+        self.conv_after_layer = nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, kernel_size=16,
+                                             stride=stride)
         
         # Creating the short connection
         if self.i == 3 or self.i == 7 or self.i == 11:
@@ -71,9 +73,11 @@ class residual_blocks_rajpurkar_torch(nn.Module):
     # The operation function: the one that will calculate what is needed
     def forward(self, input):
         out = self.layer(input)
+        out = F.pad(out, (8, 7))
+        out = self.conv_after_layer(out)
         short = self.skip(input)
-        if out.shape[2] != short.shape[2]:
-            out = nn.functional.pad(out, (0,1))
+        # if out.shape[2] != short.shape[2]:
+        #     out = nn.functional.pad(out, (0,1))
         out = out + short
         return out
     
@@ -100,7 +104,7 @@ class skip_connection_torch(nn.Module):
         self.downsample = downsample
     
         # Creating the short connection
-        self.skip = nn.Sequential(nn.MaxPool1d(kernel_size=self.downsample, stride=self.downsample),
+        self.skip = nn.Sequential(nn.MaxPool1d(kernel_size=self.downsample, stride=self.downsample, ceil_mode=True),
                                   nn.Conv1d(in_channels=self.in_channels, out_channels=self.out_channels, 
                                             kernel_size=1, stride=1, padding='same')
         )
@@ -138,17 +142,16 @@ class residual_blocks_ribeiro_torch(nn.Module):
         self.downsample = downsample
         self.skip_connection = skip_connection
 
-        # This object will be summed with the skip_connection object at the 'forward()' method        
+        # This object will be summed with the skip_connection object at the 'forward()' method
         self.layer_sum = nn.Sequential(nn.Conv1d(in_channels=self.in_channels, out_channels=self.out_channels, 
                                                  kernel_size=16, stride=1, padding='same'),
                                        nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
                                        nn.ReLU(),
-                                       nn.Dropout(p=self.rate_drop),
-                                    #    nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, 
-                                    #              kernel_size=16, stride=self.downsample, padding='same')            
-                                       nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, 
-                                                 kernel_size=16, stride=self.downsample, padding=7)            
+                                       nn.Dropout(p=self.rate_drop)     
         )
+        
+        self.conv_after_layer_sum = nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, 
+                                                 kernel_size=16, stride=self.downsample)     
         
         self.layer_middle = self.skip_connection(self.in_channels, self.out_channels, self.downsample)
         
@@ -161,8 +164,10 @@ class residual_blocks_ribeiro_torch(nn.Module):
         layer, skip = input
         skip = self.layer_middle(skip)
         layer = self.layer_sum(layer)
-        if layer.shape[2] != skip.shape[2]:
-            skip = nn.functional.pad(skip, (0,1))
+        layer = F.pad(layer, (8, 7))
+        layer = self.conv_after_layer_sum(layer)
+        # if layer.shape[2] != skip.shape[2]:
+        #     skip = nn.functional.pad(skip, (0,1))
         layer = layer + skip
         skip = layer
         layer = self.layer_alone(layer)
@@ -215,9 +220,10 @@ class rajpurkar_torch(nn.Module):
         self.layer_to_be_summed = nn.Sequential(nn.Conv1d(stride=1, padding='same', **self.conv_config),
                                                 nn.BatchNorm1d(num_features=64, eps=0.001, momentum=0.99),
                                                 nn.ReLU(),
-                                                nn.Dropout(p=self.rate_drop),
-                                                nn.Conv1d(stride=2, **self.conv_config, padding=7)            
+                                                nn.Dropout(p=self.rate_drop)            
         )
+        
+        self.conv_after_layer_to_be_summed = nn.Conv1d(stride=2, **self.conv_config)
         
         # Creating the channels matrix that will be used to create the connection layers
         self.num_channels = [64, 64, 64, 64,
@@ -256,6 +262,8 @@ class rajpurkar_torch(nn.Module):
         layer = self.layer_to_be_passed(input)
         skip = self.skip_alone(layer)
         layer = self.layer_to_be_summed(layer)
+        layer = F.pad(layer, (8, 7))
+        layer = self.conv_after_layer_to_be_summed(layer)
         out = layer + skip
         out = self.middle_layers(out)
         out = self.layer_end(out)
@@ -327,7 +335,6 @@ class ribeiro_torch(nn.Module):
 class CustomDataset(Dataset):
     def __init__(self, data, labels):
         self.data = data
-        # Converting to float because of BCELoss from Pytorch
         self.labels = labels
 
     def __len__(self):

@@ -3,6 +3,8 @@
 # Python Scripts
 grid_search.py
 utils.py
+test_grid_search.py
+classification.py
 
 # Data
 *.npz
@@ -23,6 +25,7 @@ lightning_logs/
 results
 results_antigos_nao_deve_ser_considerado
 saved_models
+TESTE results
 
 # VSCode
 .vscode/

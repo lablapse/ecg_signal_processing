@@ -5,6 +5,7 @@ import pandas as pd
 import pathlib, os
 import pytorch_lightning as pl
 import pytorch_lightning.callbacks as callback
+import pytorch_lightning.loggers as logger
 import torch
 import utils_general
 import utils_lightning
@@ -130,8 +131,18 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     # Accumulating callbacks in a list
     callbacks = [checkpoint_callback, rich_callback, early_stopping_callback]
 
+    # Defining loggers
+    # TensorBoard logger
+    logger_tb = logger.TensorBoardLogger(model_path, 'model')
+    
+    # .csv logger
+    logger_csv = logger.TensorBoardLogger(model_path, 'model')
+    
+    loggers = [logger_tb, logger_csv]
+
     # Defining the trainer from pytorch lightning
-    trainer = pl.Trainer(max_epochs=100, accelerator='gpu', callbacks=callbacks, fast_dev_run=False, devices='auto')
+    trainer = pl.Trainer(max_epochs=100, accelerator='gpu', callbacks=callbacks, logger=loggers,
+                         fast_dev_run=False, devices='auto')
 
     # Fitting the model
     trainer.fit(model, train_dataloaders=dataloaders[0], val_dataloaders=dataloaders[1])

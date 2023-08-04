@@ -12,7 +12,7 @@ class LitModel(pl.LightningModule):
     '''
     
     # Passing values to the __init()__ function
-    def __init__(self, model, optimizer, learning_rate, **kwargs):
+    def __init__(self, model, optimizer, learning_rate, optim_kwargs, **kwargs):
         
         # Calling the pl.LightningModule 'constructor'
         super(LitModel, self).__init__()
@@ -24,9 +24,10 @@ class LitModel(pl.LightningModule):
         self.model = model(**kwargs)
         
         # Selecting the loss function
-        self.metric = torch.nn.BCELoss()
+        self.metric = torch.nn.BCELoss(reduction='sum')
         
         self.optimizer_function = optimizer
+        self.optim_kwargs = optim_kwargs
         self.learning_rate = learning_rate
 
     # Creating the 'forward()' function
@@ -36,7 +37,7 @@ class LitModel(pl.LightningModule):
 
     # This selects the optimizer and the learning rate of the selected model
     def configure_optimizers(self):
-        self.optimizer = self.optimizer_function(self.parameters(), lr=self.learning_rate)
+        self.optimizer = self.optimizer_function(self.parameters(), lr=self.learning_rate, **self.optim_kwargs)
         self.schedular = {'scheduler':torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer,
             mode='min',
@@ -80,8 +81,19 @@ def creating_the_model(model_kwargs):
     '''
     This function receives its inputs from the returned values of 
     "utils_torch.py -> 'creating_the_kwargs'" function
-    and returns the selected model.
+    and returns the selected model. It also selects the values for 
+    the selected optimizer to match the default used in keras.
     '''
     
-    model = LitModel(model_kwargs[0], model_kwargs[2], model_kwargs[3], **model_kwargs[1])
+    if torch.optim.Adam == model_kwargs[2]:
+        optim_kwargs = {"eps":1e-7}
+        
+    if torch.optim.RMSprop == model_kwargs[2]:
+        optim_kwargs = {"alpha":0.9, "eps":1e-7}
+        
+    if torch.optim.SGD == model_kwargs[2]:
+        optim_kwargs = {"momentum":0} # Not really necessary to put this one here like this, I am just kind of maintaining a pattern
+        
+    
+    model = LitModel(model_kwargs[0], model_kwargs[2], model_kwargs[3], optim_kwargs, **model_kwargs[1])
     return model

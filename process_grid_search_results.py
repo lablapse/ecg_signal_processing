@@ -7,7 +7,7 @@ This script opens a .csv file and plot the f1-scores by learning rate, model, op
 '''
 
 # Load the csv file
-df = pd.read_csv('grid_search_results_torch.csv')
+df = pd.read_csv('maisTestes.csv')
 
 # Drop columns that are not needed
 columns_to_drop = ['index', 'train_loss', 'train_accuracy', 'train_precision_macro_avg',\
@@ -33,7 +33,10 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
     
     # Creating rows of plots based on 'learning_rate' values
     for idx, lr in enumerate(learning_rates): 
-        ax = axes[idx]
+        try:
+            ax = axes[idx]
+        except:
+            ax = axes
 
         # Extract the data
         columns_of_interest = ['optimizer', 'batch_size', 'val_f1_score_macro_avg']
@@ -77,7 +80,7 @@ def plot_f1_score_by_batch_size(df, model, learning_rates):
                ncol=len(data), bbox_to_anchor=(0.5, 1.0), edgecolor='none', facecolor='none')
     
     # Saving the Figure
-    fig.savefig(f'{model}.png')
+    fig.savefig(f'1 - 256_0.01_all {model}.png')
     
     # Showing the created figure
     plt.show()
