@@ -11,6 +11,10 @@ import utils_general
 import utils_lightning
 import utils_torch
 
+# import os
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"]="0" # 0 = 3090, 1 = 3080
+
 gc.collect()
 torch.cuda.empty_cache()
 
@@ -68,7 +72,8 @@ parameters = {
             'batch_size': [16, 32, 64, 128, 256],\
             'optimizer': [torch.optim.SGD, torch.optim.RMSprop, torch.optim.Adam],\
             'learning_rate': [0.001, 0.01, 0.1],\
-            'model_name': ['rajpurkar', 'ribeiro']
+            # 'model_name': ['rajpurkar', 'ribeiro']
+            'model_name': ['ribeiro']
             }
 csv_file_path = 'grid_search_results_torch.csv'
 
@@ -102,6 +107,8 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     # Creating the models
     arguments = utils_torch.creating_the_kwargs(model_name, optimizer, learning_rate)
     model = utils_lightning.creating_the_model(arguments)
+
+    utils_general.calling_setting_torch_weights(model)
 
     # Paths
     model_name_path = f'{model_name}_{index}_{batch_size}_{optimizer}_{learning_rate}'
@@ -142,7 +149,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
 
     # Defining the trainer from pytorch lightning
     trainer = pl.Trainer(max_epochs=100, accelerator='gpu', callbacks=callbacks, logger=loggers,
-                         fast_dev_run=False, devices='auto')
+                         fast_dev_run=False, devices=[1])
 
     # Fitting the model
     trainer.fit(model, train_dataloaders=dataloaders[0], val_dataloaders=dataloaders[1])

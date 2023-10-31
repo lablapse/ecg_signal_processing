@@ -15,7 +15,7 @@ torch.cuda.empty_cache()
 # Selecting the model that will used
 model_name = 'ribeiro'
 # model_name = 'rajpurkar'
-name_timestamp = f'saved_model:2023-07-27T19:02:00.606094'
+name_timestamp = f'saved_model:2023-10-21T12:51:47.552807'
 
 # Labels
 target_names = ['NORM', 'STTC', 'CD', 'MI', 'HYP']

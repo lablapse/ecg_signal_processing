@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 import pytorch_lightning.callbacks as callback
 from pytorch_lightning.loggers import TensorBoardLogger, CSVLogger
 import torch
+import utils_general
 import utils_lightning
 import utils_torch
 
@@ -28,6 +29,8 @@ dataloaders = utils_torch.creating_dataloaders(datasets, batch_size)
 arguments = utils_torch.creating_the_kwargs(model_name, torch.optim.Adam, learning_rate=0.001)
 model = utils_lightning.creating_the_model(arguments)
 
+utils_general.calling_setting_torch_weights(model)
+
 # Defining callbacks
 # Checkpointing the model
 checkpoint_callback = callback.ModelCheckpoint(dirpath=dirpath_model_checkpoint, filename=filename_name_checkpoint, 
@@ -52,7 +55,7 @@ loggers = [logger_tb, logger_csv]
 
 # Defining the trainer from pytorch lightning
 trainer = pl.Trainer(max_epochs=100, accelerator='gpu', callbacks=callbacks, logger=loggers,
-                     fast_dev_run=False, devices='auto')
+                     fast_dev_run=False, devices=1)
 
 # Fitting the model
 trainer.fit(model, train_dataloaders=dataloaders[0], val_dataloaders=dataloaders[1])

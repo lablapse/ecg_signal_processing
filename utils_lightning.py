@@ -92,7 +92,7 @@ def creating_the_model(model_kwargs):
         optim_kwargs = {"alpha":0.9, "eps":1e-7}
         
     if torch.optim.SGD == model_kwargs[2]:
-        optim_kwargs = {"momentum":0} # Not really necessary to put this one here like this, I am just kind of maintaining a pattern
+        optim_kwargs = {"momentum":0} # Not really necessary to put this one here like this, I am just maintaining the pattern
         
     
     model = LitModel(model_kwargs[0], model_kwargs[2], model_kwargs[3], optim_kwargs, **model_kwargs[1])

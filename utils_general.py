@@ -1,12 +1,17 @@
 # Python packages
 import graphviz
+import keras
 import matplotlib.pyplot as plt # for plotting
 import numpy as np # some fundamental operations
+import os
 import pathlib # for the paths 
 import plot_utils as putils # importing custom code
 import pandas as pd # for .csv manipulation
+import pickle
 import seaborn as sns # used in some plotting
+import torch
 import torchview #https://github.com/mert-kurttutan/torchview
+import tqdm
 
 # Plot results
 def plot_results(history, name, metric, plot_path='plots'):
@@ -376,3 +381,95 @@ def gv_and_pdf_model(model, model_name, shape1, shape2):
     dot = graphviz.Source.from_file(f'{model_name}.gv')
     dot.render()
     return
+
+def setting_keras_weights(keras_model, generated_weights_path_file):
+    '''
+    This function receives a keras model and a string to the path of the file with the generated weights.
+    This only modify convolutional
+    '''
+    
+    counting = 0
+    
+    file_weights = open(f"{generated_weights_path_file}", "rb")
+    weights = pickle.load(file_weights)
+    
+    for layer in keras_model.layers:
+        if type(layer) == keras.layers.Conv1D:
+            layer.set_weights((weights[counting],layer.weights[1]))
+            assert((np.array(layer.weights[0]) == weights[counting]).all())
+            counting += 1
+    
+    file_weights.close()
+            
+    return keras_model
+
+# This function receives any torch model and searches for a desired type
+def changing_weights_torch(torch_model, types, desired_type, generated_weights_list):
+    
+    '''
+    The objective of this function is to search for specific layers in a torch model and change 
+    the weights of specific layers.
+    
+    This function returns the modified model.
+    '''
+    
+    try:
+        for layer in torch_model:
+            if type(layer) not in types:
+                changing_weights_torch(layer, types, desired_type, generated_weights_list)
+            if type(layer) in desired_type:
+                with torch.no_grad():
+                    if desired_type == torch.nn.Conv1d:
+                        layer.weight.data = torch.nn.Parameter(torch.from_numpy(np.transpose(generated_weights_list[0][0], axes=(2,1,0))))
+                        layer.bias.data = torch.nn.Parameter(torch.from_numpy(np.transpose(generated_weights_list[0][1], axes=(2,1,0))))
+                    elif desired_type == torch.nn.BatchNorm1d:
+                        layer.running_mean.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][0]))
+                        layer.running_var.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][1]))
+                        layer.weight.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][2]))
+                        layer.weight.bias = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][3]))
+                    elif desired_type == torch.nn.dense:
+                        layer.weight.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][0]))
+                        layer.bias.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][1]))
+                    generated_weights_list.pop(0)
+    except TypeError:
+        if type(torch_model) not in types:
+            changing_weights_torch(torch_model.children(), types, desired_type, generated_weights_list)
+            
+    return torch_model
+
+# This function calls changing_weights_torch function
+def setting_torch_weights(torch_model, types, desired_type, generated_weights_path_file):
+    
+    with open(f"{generated_weights_path_file}", "rb") as file_weights:
+        weights = pickle.load(file_weights)
+    
+        return changing_weights_torch(torch_model, types, desired_type, weights)
+    
+# This function calls setting_torch_weights in a convenient way
+def calling_setting_torch_weights(torch_model):
+    
+    types = [torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.BatchNorm1d, torch.nn.Dropout1d]
+    desired_type = torch.nn.Conv1d
+    generated_weights_path_file = 'matrizes_weight_keras'
+    
+    torch_model = setting_torch_weights(torch_model, types, desired_type, generated_weights_path_file)
+    
+    
+def easy_opening_weights():
+    with open('matrizes_weight_keras', 'rb') as file_weights:
+        weights = pickle.load(file_weights)
+        return weights
+
+
+def loading_Saved_models(path):
+
+    for subdir, dirs, files in tqdm.tqdm(os.walk(path)):
+        if subdir == './results':
+            continue
+        subdir = subdir[10:]
+        information = tuple(map(str, subdir.split('_')))
+        information = list(information)
+        information[1] = int(information[1])
+        information[2] = int(information[2])
+        information[4] = float(information[4])
+        print(information)

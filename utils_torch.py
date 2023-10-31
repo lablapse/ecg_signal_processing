@@ -515,3 +515,34 @@ def computate_predictions(model, dataset, size_test):
             del prediction
         
     return prediction_bin
+
+# This function receives any torch model and searches for a desired type
+def searching_layer_torch(torch_model, types, desired_type, list_with_found_layers):
+    
+    '''
+    The objective of this function is to search for specific layers in a torch model.
+    Doing this, it's possible, for exemple, to see a copy of the weights of all Conv1d layers
+    in a torch model. Probably there is a smarter/builted-in way to do this, but, at 
+    this moment, I could not find it.  
+    
+    This function returns a list with the found layers.
+    '''
+    
+    try:
+        for layer in torch_model:
+            if type(layer) not in types:
+                searching_layer_torch(layer, types, desired_type, list_with_found_layers)
+            if type(layer) == desired_type:
+                list_with_found_layers.append(layer)
+    except TypeError:
+        if type(torch_model) not in types:
+            searching_layer_torch(torch_model.children(), types, desired_type, list_with_found_layers)
+            
+    return list_with_found_layers
+
+def easy_calling_searching_layer_torch(torch_model):
+    types = [nn.BatchNorm1d, nn.ReLU, nn.Sigmoid, nn.Dropout1d, nn.MaxPool1d]
+    desired_type = nn.Conv1d
+    
+    list_with_found_layers = searching_layer_torch(torch_model, types, desired_type, [])
+    return list_with_found_layers

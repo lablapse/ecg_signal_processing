@@ -5,6 +5,8 @@ grid_search.py
 utils.py
 test_grid_search.py
 classification.py
+investigation.py
+navegando_pelas_Pastas.py
 
 # Data
 *.npz
@@ -12,6 +14,11 @@ classification.py
 *.csv
 *.h5
 *.gv
+*.txt
+matrizes_weight_keras
+
+# Data Folders
+results_grid_search_torch
 
 # Figures
 *.png
