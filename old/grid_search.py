@@ -93,7 +93,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     # tic = timeit.default_timer()
     tic = datetime.now().isoformat()
     # history = model.fit(train_dataset, validation_data=val_dataset, epochs=epochs, callbacks=callbacks) # epochs = 100
-    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=epochs, callbacks=callbacks)
+    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=epochs, callbacks=callbacks) # epochs = 100
     # toc = timeit.default_timer()
     toc = datetime.now().isoformat()
 
@@ -141,7 +141,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     # Save a csv file with the reports from the MLCM - test
     utils.get_mlcm_report(cm, target_names, model_name_path, dataset='test')
     # Plot the MLCM
-    # !!!! OBS.: "dataset" estava como "val". Dessa forma, todas as CMs são de teste e não de validação !!!!
+    # !!!! OBS.: dataset estava como "val". Dessa forma, todas as CMs são de teste e não de validação !!!!
     utils.plot_confusion_matrix(cm, model_name_path, target_names, plot_path = 'results', dataset = 'test')
 
     # Plot the loss from the training e validation set
