@@ -1,4 +1,5 @@
 # Python packages
+import gc
 import graphviz
 import keras
 import matplotlib.pyplot as plt # for plotting
@@ -12,6 +13,11 @@ import seaborn as sns # used in some plotting
 import torch
 import torchview #https://github.com/mert-kurttutan/torchview
 import tqdm
+
+from keras.backend import set_session
+from keras.backend import clear_session
+from keras.backend import get_session
+
 
 # Plot results
 def plot_results(history, name, metric, plot_path='plots'):
@@ -417,7 +423,7 @@ def changing_weights_torch(torch_model, types, desired_type, generated_weights_l
         for layer in torch_model:
             if type(layer) not in types:
                 changing_weights_torch(layer, types, desired_type, generated_weights_list)
-            if type(layer) in desired_type:
+            elif type(layer) == desired_type:
                 with torch.no_grad():
                     if desired_type == torch.nn.Conv1d:
                         layer.weight.data = torch.nn.Parameter(torch.from_numpy(np.transpose(generated_weights_list[0][0], axes=(2,1,0))))
@@ -473,3 +479,40 @@ def loading_Saved_models(path):
         information[2] = int(information[2])
         information[4] = float(information[4])
         print(information)
+
+def new_reset_keras(tensors_to_be_released):
+    '''
+    Reset Keras session and clear GPU memory.
+    '''
+    
+    # Reset Keras session
+    keras.backend.clear_session()
+    
+    # Explicitly delete model variables
+    for tensor in tensors_to_be_released:
+        del tensor
+    
+    # Garbage collection
+    for _ in range(15):
+        gc.collect()
+
+    return
+    
+def another_reset_keras():
+    sess = get_session()
+    clear_session()
+    sess.close()
+    sess = get_session()
+
+    try:
+        del classifier # this is from global space - change this as you need
+    except:
+        pass
+
+    print(gc.collect()) # if it's done something you should see a number being outputted
+
+    # use the same config as you used to create the session
+    config = keras.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 1
+    config.gpu_options.visible_device_list = "0"
+    set_session(keras.Session(config=config))
