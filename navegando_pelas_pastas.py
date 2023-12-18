@@ -1,3 +1,6 @@
+## THIS SCRIPT IS NOT MEANT TO BE USED. IT APRESENTED SEVERAL PROBLEMS AND FLAWS. I DID NOT KILL IT ##
+##                  BECAUSE ALL THE DEVELOP CODE COULD SHOW UTILITY IN THE FUTURE                   ## 
+
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0" 
 
@@ -13,7 +16,7 @@ import plot_utils as putils # importing custom code
 import pandas as pd # for .csv manipulation
 import pickle
 import seaborn as sns # used in some plotting
-import tensorflow
+import tensorflow as tf
 import torch
 import torchview #https://github.com/mert-kurttutan/torchview
 import tqdm
@@ -155,6 +158,9 @@ if True:
         
         print(f'########## {subdir = } ##########')
 
+        sess = tf.compat.v1.Session()
+        keras.backend.set_session(sess)
+
         model = keras.models.load_model(subdir + f'/model.h5')
         name_model = retrieving_model_name(subdir)
         print(name_model)
@@ -171,3 +177,4 @@ if True:
             batch_size = 256
     
         saving_weights_keras_model(model, desired_layers, name_model, batch_size)
+        keras.backend.clear_session()

@@ -516,3 +516,59 @@ def another_reset_keras():
     config.gpu_options.per_process_gpu_memory_fraction = 1
     config.gpu_options.visible_device_list = "0"
     set_session(keras.Session(config=config))
+
+
+# This function keeps the weights and bias of a torch model in a way that hopefully doesnt bugs out.
+def keeping_torch_weights(torch_model, types, desired_type, saved_dict_weights):
+
+    try:
+        for layer in torch_model:
+            if type(layer) not in types:
+                keeping_torch_weights(layer, types, desired_type)
+            elif type(layer) == desired_type:
+                with torch.no_grad():
+                    if desired_type == torch.nn.Conv1d:
+                        saved_dict_weights['weights'].append(layer.weight.data)
+                        saved_dict_weights['bias'].append(layer.bias.data)
+                    elif desired_type == torch.nn.BatchNorm1d:
+                        saved_dict_weights['running_mean'].append(layer.running_mean.data)
+                        saved_dict_weights['running_var'].append(layer.running_var.data)
+                        saved_dict_weights['weights'].append(layer.weight.data)
+                        saved_dict_weights['bias'].append(layer.weight.bias)
+                    elif desired_type == torch.nn.dense:
+                        saved_dict_weights['weights'].append(layer.weight.data)
+                        saved_dict_weights['bias'].append(layer.bias.data)
+    except TypeError:
+        if type(torch_model) not in types:
+            keeping_torch_weights(torch_model.children(), types, desired_type)
+            
+    return torch_model
+
+
+# This function calls the 'keeping_torch_weights' function in a easier way.
+# I could have programed a class for it but I thought that it would be unnecessary
+def calling_keeping_torch_weights(torch_model, types, desired_types, path):
+    for desired_type in desired_types:
+        if desired_type == torch.nn.Conv1d or desired_type == torch.nn.dense:
+            saved_dict_weights = {}
+            saved_dict_weights['weights'] = []
+            saved_dict_weights['bias'] = []
+            if desired_type == torch.nn.Conv1d:
+                name = 'conv'
+            elif desired_type == torch.nn.dense:
+                name = 'dense'
+        elif desired_type == torch.nn.BatchNorm1d:
+            saved_dict_weights = {}
+            saved_dict_weights['weights'] = []
+            saved_dict_weights['bias'] = []
+            saved_dict_weights['running_mean'] = []
+            saved_dict_weights['running_var'] = []
+        
+        keeping_torch_weights(torch_model, types, desired_type, saved_dict_weights)
+        if not saved_dict_weights:
+            raise ValueError(f"That's a costom error message! Check why wasn't save any weights for the {desired_type} layers. 
+                             Also, check if the given {torch_model} is what you expect.")
+        
+        np.savez(f'{path}{name}.npz', **saved_dict_weights)
+
+    return

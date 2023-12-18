@@ -116,9 +116,9 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
 
     # Paths
     model_name_path = f'{model_name}_{index}_{batch_size}_{optimizer}_{learning_rate}'
-    model_path = f'results/{model_name_path}/'
-    model_path_complete = f'results/{model_name_path}/model.ckpt'
-    csv_path = f'results/{model_name_path}/history.csv'
+    model_path = f'results_torch/{model_name_path}/'
+    model_path_complete = f'results_torch/{model_name_path}/model.ckpt'
+    csv_path = f'results_torch/{model_name_path}/history.csv'
 
     # Convert strings to Path type
     csv_path = pathlib.Path(csv_path)
@@ -157,6 +157,11 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
 
     # Fitting the model
     trainer.fit(model, train_dataloaders=dataloaders[0], val_dataloaders=dataloaders[1])
+
+    # Saving the weights in a easy way to access later by numpy
+    types = [torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.Dropout1d]
+    desired_types = [torch.nn.Conv1d, torch.nn.dense, torch.nn.BatchNorm1d]
+    utils_general.calling_keeping_torch_weights(torch_model=model, types=types, desired_types=desired_types, path=model_path) 
     
     # Loading the model
     loaded_model = utils_lightning.LitModel.load_from_checkpoint(model_path_complete)
