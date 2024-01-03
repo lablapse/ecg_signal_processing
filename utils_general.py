@@ -433,7 +433,7 @@ def changing_weights_torch(torch_model, types, desired_type, generated_weights_l
                         layer.running_var.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][1]))
                         layer.weight.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][2]))
                         layer.weight.bias = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][3]))
-                    elif desired_type == torch.nn.dense:
+                    elif desired_type == torch.nn.Linear:
                         layer.weight.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][0]))
                         layer.bias.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][1]))
                     generated_weights_list.pop(0)
@@ -524,23 +524,54 @@ def keeping_torch_weights(torch_model, types, desired_type, saved_dict_weights):
     try:
         for layer in torch_model:
             if type(layer) not in types:
-                keeping_torch_weights(layer, types, desired_type)
+                keeping_torch_weights(layer, types, desired_type, saved_dict_weights)
             elif type(layer) == desired_type:
                 with torch.no_grad():
                     if desired_type == torch.nn.Conv1d:
-                        saved_dict_weights['weights'].append(layer.weight.data)
-                        saved_dict_weights['bias'].append(layer.bias.data)
+                        # saved_dict_weights['weights'].append(np.array((saved_dict_weights['weights'], layer.weight.data), dtype='object'))
+                        # saved_dict_weights['bias'].append(np.array((saved_dict_weights['bias'], layer.bias.data), dtype='object'))
+                        saved_dict_weights['weights'] = np.concatenate(saved_dict_weights['weights'], \
+                                                                       np.reshape(layer.weight.data, (layer.weight.data.shape[0],    \
+                                                                                                      layer.weight.data.shape[1],     \
+                                                                                                      layer.weight.data.shape[2], 1)), \
+                                                                       axis=3)
+                        saved_dict_weights['bias'] = np.concatenate(saved_dict_weights['bias'], \
+                                                               np.reshape(layer.bias.data, (layer.bias.data.shape[0], 1)), \
+                                                               axis=1)
+                        # saved_dict_weights['weights'].append(np.array((layer.weight.data), dtype='object'))
+                        # saved_dict_weights['bias'].append(np.array((layer.bias.data), dtype='object'))
                     elif desired_type == torch.nn.BatchNorm1d:
-                        saved_dict_weights['running_mean'].append(layer.running_mean.data)
-                        saved_dict_weights['running_var'].append(layer.running_var.data)
-                        saved_dict_weights['weights'].append(layer.weight.data)
-                        saved_dict_weights['bias'].append(layer.weight.bias)
-                    elif desired_type == torch.nn.dense:
-                        saved_dict_weights['weights'].append(layer.weight.data)
-                        saved_dict_weights['bias'].append(layer.bias.data)
+                        # saved_dict_weights['running_mean'].append(np.array((saved_dict_weights['running_mean'], layer.running_mean.data), dtype='object'))
+                        # saved_dict_weights['running_var'].append(np.array((saved_dict_weights['running_var'], layer.running_var.data), dtype='object'))
+                        # saved_dict_weights['weights'].append(np.array((saved_dict_weights['weights'], layer.weight.data), dtype='object'))
+                        # saved_dict_weights['bias'].append(np.array((saved_dict_weights['bias'], layer.bias.data), dtype='object'))
+                        saved_dict_weights['weights'] = np.concatenate(saved_dict_weights['weights'], \
+                                                               np.reshape(layer.weight.data, (layer.weight.data.shape[0], 1)), \
+                                                               axis=1)
+                        saved_dict_weights['bias'] = np.concatenate(saved_dict_weights['bias'], \
+                                                               np.reshape(layer.bias.data, (layer.bias.data.shape[0], 1)), \
+                                                               axis=1)
+                        saved_dict_weights['running_mean'] = np.concatenate(saved_dict_weights['running_mean'], \
+                                                               np.reshape(layer.running_mean.data, (layer.running_mean.data.shape[0], 1)), \
+                                                               axis=1)
+                        saved_dict_weights['running_var'] = np.concatenate(saved_dict_weights['running_var'], \
+                                                               np.reshape(layer.running_var.data, (layer.running_var.data.shape[0], 1)), \
+                                                               axis=1)
+                    elif desired_type == torch.nn.Linear:
+                        # saved_dict_weights['weights'].append(np.array((saved_dict_weights['weights'], layer.weight.data), dtype='object'))
+                        # saved_dict_weights['bias'].append(np.array((saved_dict_weights['bias'], layer.bias.data), dtype='object'))
+                        saved_dict_weights['weights'] = np.concatenate(saved_dict_weights['weights'], \
+                                                                       np.reshape(layer.weight.data, (layer.weight.data.shape[0],    \
+                                                                                                      layer.weight.data.shape[1],     \
+                                                                                                      layer.weight.data.shape[2], 1)), \
+                                                                       axis=3)
+                        saved_dict_weights['bias'] = np.concatenate(saved_dict_weights['bias'], \
+                                                               np.reshape(layer.bias.data, (layer.bias.data.shape[0], 1)), \
+                                                               axis=1)
     except TypeError:
         if type(torch_model) not in types:
-            keeping_torch_weights(torch_model.children(), types, desired_type)
+            # keeping_torch_weights(torch_model.children(), types, desired_type, saved_dict_weights)
+            keeping_torch_weights(list(torch_model._modules.values())[0], types, desired_type, saved_dict_weights)
             
     return torch_model
 
@@ -549,25 +580,27 @@ def keeping_torch_weights(torch_model, types, desired_type, saved_dict_weights):
 # I could have programed a class for it but I thought that it would be unnecessary
 def calling_keeping_torch_weights(torch_model, types, desired_types, path):
     for desired_type in desired_types:
-        if desired_type == torch.nn.Conv1d or desired_type == torch.nn.dense:
+        if desired_type == torch.nn.Conv1d or desired_type == torch.nn.Linear:
             saved_dict_weights = {}
-            saved_dict_weights['weights'] = []
-            saved_dict_weights['bias'] = []
+            saved_dict_weights['weights'] = np.array([], ndmin=4)
+            saved_dict_weights['bias'] = np.array([], ndmin=2)
             if desired_type == torch.nn.Conv1d:
                 name = 'conv'
-            elif desired_type == torch.nn.dense:
-                name = 'dense'
+            elif desired_type == torch.nn.Linear:
+                name = 'linear'
         elif desired_type == torch.nn.BatchNorm1d:
             saved_dict_weights = {}
-            saved_dict_weights['weights'] = []
-            saved_dict_weights['bias'] = []
-            saved_dict_weights['running_mean'] = []
-            saved_dict_weights['running_var'] = []
+            saved_dict_weights['weights'] = np.array([], ndmin=2)
+            saved_dict_weights['bias'] = np.array([], ndmin=2)
+            saved_dict_weights['running_mean'] = np.array([], ndmin=2)
+            saved_dict_weights['running_var'] = np.array([], ndmin=2)
+            name = 'batchnorm'
         
         keeping_torch_weights(torch_model, types, desired_type, saved_dict_weights)
-        if not saved_dict_weights:
-            raise ValueError(f"That's a costom error message! Check why wasn't save any weights for the {desired_type} layers. 
-                             Also, check if the given {torch_model} is what you expect.")
+        if not saved_dict_weights['weights'].size:
+            raise ValueError(f"This is a costom error message! Check why was not save any weights for the {desired_type} layers. \
+                             Also, check if the given torch_model is what you expect. Try running the script in the \
+                             debugger mode to check the informations more accurately - if using VSCode: https://code.visualstudio.com/docs/editor/debugging")
         
         np.savez(f'{path}{name}.npz', **saved_dict_weights)
 

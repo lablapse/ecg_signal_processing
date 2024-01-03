@@ -33,6 +33,8 @@ results
 results_antigos_nao_deve_ser_considerado
 saved_models
 TESTE results
+results_keras
+results_torch
 
 # VSCode
 .vscode/

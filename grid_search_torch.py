@@ -112,7 +112,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     arguments = utils_torch.creating_the_kwargs(model_name, optimizer, learning_rate)
     model = utils_lightning.creating_the_model(arguments)
 
-    utils_general.calling_setting_torch_weights(model)
+    # utils_general.calling_setting_torch_weights(model)
 
     # Paths
     model_name_path = f'{model_name}_{index}_{batch_size}_{optimizer}_{learning_rate}'

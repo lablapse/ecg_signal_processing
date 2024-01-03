@@ -112,7 +112,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     arguments = utils_torch.creating_the_kwargs(model_name, optimizer, learning_rate)
     model = utils_lightning.creating_the_model(arguments)
 
-    utils_general.calling_setting_torch_weights(model)
+    # utils_general.calling_setting_torch_weights(model)
 
     # Paths
     model_name_path = f'{model_name}_{index}_{batch_size}_{optimizer}_{learning_rate}'
@@ -159,9 +159,9 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     trainer.fit(model, train_dataloaders=dataloaders[0], val_dataloaders=dataloaders[1])
 
     # Saving the weights in a easy way to access later by numpy
-    types = [torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.Dropout1d]
-    desired_types = [torch.nn.Conv1d, torch.nn.dense, torch.nn.BatchNorm1d]
-    utils_general.calling_keeping_torch_weights(torch_model=model, types=types, desired_types=desired_types, path=model_path) 
+    # types = [torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.Dropout1d, torch.nn.Conv1d, torch.nn.Linear, torch.nn.BatchNorm1d]
+    # desired_types = [torch.nn.Conv1d, torch.nn.Linear, torch.nn.BatchNorm1d]
+    # utils_general.calling_keeping_torch_weights(torch_model=model, types=types, desired_types=desired_types, path=model_path) 
     
     # Loading the model
     loaded_model = utils_lightning.LitModel.load_from_checkpoint(model_path_complete)
