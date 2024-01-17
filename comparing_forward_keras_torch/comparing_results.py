@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pathlib
 
-def loading_results_and_generating_error_file(path='comparing_keras_torch/'):
+def loading_results_and_generating_error_file(path='comparing_forward_keras_torch/'):
 
     files_list = []
     subdir_list = []
@@ -19,12 +19,15 @@ def loading_results_and_generating_error_file(path='comparing_keras_torch/'):
         result_0 = result_0['arr_0']
         result_1 = np.load(f"{subdir_list[1]}/{file}")
         result_1 = result_1['arr_0']
-        if len(result_1.shape) == 3:
-            result_1 = np.transpose(result_1, axes=(0, 2, 1))
+        # if file == 'conv.npz':
+        #     result_1 = np.transpose(result_1, axes=(0, 2, 1))
+        
 
         error = calculation_the_errors(result_0, result_1)
         
         errors[f'{file[:-4]}'] = error
+
+        print(f'{file = }  ---->  {result_0.shape = }, {result_1.shape = }')
 
     path = pathlib.Path(f'errors/erros.npz')
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -43,4 +46,4 @@ def opening_errors_file(path='errors/erros.npz'):
         print(f'{key = }, {errors[key] = }')
 
 loading_results_and_generating_error_file()
-# opening_errors_file()
+opening_errors_file()

@@ -9,35 +9,45 @@ import pathlib
 os.environ["CUDA_VISIBLE_DEVICES"]="" 
 
 # This function receives a keras operation and a numpy array, then, saves the calculated result
-def calculate_and_save(keras_operation, numpy_array, path='comparing_keras_torch/keras_results/'):
+def calculate_and_save(keras_operation, numpy_array, path='comparing_forward_keras_torch/keras_results/'):
 
     assert numpy_array.dtype == np.float32
 
     if keras_operation == Conv1D:
+        # numpy_array = np.transpose(numpy_array, axes=(0, 2, 1))
+        
         result = keras_operation(numpy_array.shape[2] * 2, 1, kernel_initializer='ones', bias_initializer='zeros')(numpy_array)
+
+        assert result.shape == (numpy_array.shape[0], numpy_array.shape[1], numpy_array.shape[2] * 2)
+        # numpy_array = np.transpose(numpy_array, axes=(0, 2, 1))
+
         name = 'conv'
 
     elif keras_operation == BatchNormalization:
-        result = keras_operation()(numpy_array)
+        result = keras_operation()(numpy_array, training=True)
+
+        assert result.shape == numpy_array.shape
         name = 'batchnorm'
 
     elif keras_operation == ReLU:
         result = keras_operation()(numpy_array)
+
+        assert result.shape == numpy_array.shape
         name = 'relu'
 
     elif keras_operation == sigmoid:
-        shapes = numpy_array.shape
-        total = shapes[0] * shapes[1] * shapes[2]
-        result = Dense(total, activation='sigmoid', kernel_initializer='ones', bias_initializer='zeros')(numpy_array)
+        result = keras_operation(numpy_array)
+
+        assert result.shape == numpy_array.shape
         name = 'sigmoid'
 
     elif keras_operation == Dense:
-        numpy_array = numpy_array[:,0,:]
 
-        shapes = numpy_array.shape
-        total = shapes[0] * shapes[1]
+        channels_out = numpy_array.shape[2] // 2
         
-        result = keras_operation(total // 2, kernel_initializer='ones', bias_initializer='zeros')(numpy_array)
+        result = keras_operation(channels_out, kernel_initializer='ones', bias_initializer='zeros')(numpy_array)
+
+        assert result.shape == (numpy_array.shape[0], numpy_array.shape[1], channels_out)
         name = 'linear'
 
     else:
@@ -45,15 +55,16 @@ def calculate_and_save(keras_operation, numpy_array, path='comparing_keras_torch
 
     path = pathlib.Path(f'{path}{name}.npz')
     path.parent.mkdir(parents=True, exist_ok=True)
-    
+    result = np.transpose(result, axes=(0, 2, 1))
     np.savez(path, result)
 
     return
 
-data = np.load('comparing_keras_torch/informacao_para_as_comparacoes.npz')
+data = np.load('comparing_forward_keras_torch/informacao_para_as_comparacoes.npz')
 numpy_array = data['arr_0']
 numpy_array = np.transpose(numpy_array, axes=(0, 2, 1))
 
+# keras_operations = [Conv1D, BatchNormalization, ReLU, Dense]
 keras_operations = [Conv1D, BatchNormalization, ReLU, sigmoid, Dense]
 
 for keras_operation in keras_operations:
