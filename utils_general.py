@@ -1,23 +1,16 @@
 # Python packages
-import gc
-import graphviz
-import keras
 import matplotlib.pyplot as plt # for plotting
 import numpy as np # some fundamental operations
-import os
 import pathlib # for the paths 
 import plot_utils as putils # importing custom code
 import pandas as pd # for .csv manipulation
-import pickle
 import seaborn as sns # used in some plotting
-import torch
-import torchview #https://github.com/mert-kurttutan/torchview
-import tqdm
 
-from keras.backend import set_session
-from keras.backend import clear_session
-from keras.backend import get_session
-
+''' 
+    This script compiles a lot of functions used in the main script - grid_search_torch.py -.
+    The name - utils_general.py -, is granted because it does not have any Pytorch
+    code in it.
+'''
 
 # Plot results
 def plot_results(history, name, metric, plot_path='plots'):
@@ -366,242 +359,30 @@ def get_mlcm_report(conf_mat, target_names, model_name):
 
     return
 
-def gv_and_pdf_model(model, model_name, shape1, shape2):
-    
-    '''
-    This function generates a .gv and a PDF file with an image of the structure of the passes model
-    
-    inputs: model -> 
-    model_name: str;
-    shape1: int;
-    shape2: int;
-    '''
-    
-    # Saving a .gv of the model
-    model_graph = torchview.draw_graph(model, input_size=(1, shape1, shape2),
-                                    graph_name=f'{model_name}', hide_module_functions=False, depth=100)
-    # I need to check if this line of code below is really necessary
-    model_graph.visual_graph
-    model_graph.visual_graph.save()
-    # Saving a PDF of the model
-    dot = graphviz.Source.from_file(f'{model_name}.gv')
-    dot.render()
-    return
+''' 
+The function 'gv_and_pdf_model' gives a pdf of the structure of the model. I had some problems
+with this function, that's the reason of it existing as a comment. But it can be used 
+to generate an image of a model.
+'''
 
-def setting_keras_weights(keras_model, generated_weights_path_file):
-    '''
-    This function receives a keras model and a string to the path of the file with the generated weights.
-    This only modify convolutional
-    '''
+# def gv_and_pdf_model(model, model_name, shape1, shape2):
     
-    counting = 0
+#     '''
+#     This function generates a .gv and a PDF file with an image of the structure of the passes model
     
-    file_weights = open(f"{generated_weights_path_file}", "rb")
-    weights = pickle.load(file_weights)
+#     inputs: model -> 
+#     model_name: str;
+#     shape1: int;
+#     shape2: int;
+#     '''
     
-    for layer in keras_model.layers:
-        if type(layer) == keras.layers.Conv1D:
-            layer.set_weights((weights[counting],layer.weights[1]))
-            assert((np.array(layer.weights[0]) == weights[counting]).all())
-            counting += 1
-    
-    file_weights.close()
-            
-    return keras_model
-
-# This function receives any torch model and searches for a desired type
-def changing_weights_torch(torch_model, types, desired_type, generated_weights_list):
-    
-    '''
-    The objective of this function is to search for specific layers in a torch model and change 
-    the weights of specific layers.
-    
-    This function returns the modified model.
-    '''
-    
-    try:
-        for layer in torch_model:
-            if type(layer) not in types:
-                changing_weights_torch(layer, types, desired_type, generated_weights_list)
-            elif type(layer) == desired_type:
-                with torch.no_grad():
-                    if desired_type == torch.nn.Conv1d:
-                        layer.weight.data = torch.nn.Parameter(torch.from_numpy(np.transpose(generated_weights_list[0][0], axes=(2,1,0))))
-                        layer.bias.data = torch.nn.Parameter(torch.from_numpy(np.transpose(generated_weights_list[0][1], axes=(2,1,0))))
-                    elif desired_type == torch.nn.BatchNorm1d:
-                        layer.running_mean.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][0]))
-                        layer.running_var.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][1]))
-                        layer.weight.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][2]))
-                        layer.weight.bias = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][3]))
-                    elif desired_type == torch.nn.Linear:
-                        layer.weight.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][0]))
-                        layer.bias.data = torch.nn.Parameter(torch.from_numpy(generated_weights_list[0][1]))
-                    generated_weights_list.pop(0)
-    except TypeError:
-        if type(torch_model) not in types:
-            changing_weights_torch(torch_model.children(), types, desired_type, generated_weights_list)
-            
-    return torch_model
-
-# This function calls changing_weights_torch function
-def setting_torch_weights(torch_model, types, desired_type, generated_weights_path_file):
-    
-    with open(f"{generated_weights_path_file}", "rb") as file_weights:
-        weights = pickle.load(file_weights)
-    
-        return changing_weights_torch(torch_model, types, desired_type, weights)
-    
-# This function calls setting_torch_weights in a convenient way
-def calling_setting_torch_weights(torch_model):
-    
-    types = [torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.BatchNorm1d, torch.nn.Dropout1d]
-    desired_type = torch.nn.Conv1d
-    generated_weights_path_file = 'matrizes_weight_keras'
-    
-    torch_model = setting_torch_weights(torch_model, types, desired_type, generated_weights_path_file)
-    
-    
-def easy_opening_weights():
-    with open('matrizes_weight_keras', 'rb') as file_weights:
-        weights = pickle.load(file_weights)
-        return weights
-
-
-def loading_Saved_models(path):
-
-    for subdir, dirs, files in tqdm.tqdm(os.walk(path)):
-        if subdir == './results':
-            continue
-        subdir = subdir[10:]
-        information = tuple(map(str, subdir.split('_')))
-        information = list(information)
-        information[1] = int(information[1])
-        information[2] = int(information[2])
-        information[4] = float(information[4])
-        print(information)
-
-def new_reset_keras(tensors_to_be_released):
-    '''
-    Reset Keras session and clear GPU memory.
-    '''
-    
-    # Reset Keras session
-    keras.backend.clear_session()
-    
-    # Explicitly delete model variables
-    for tensor in tensors_to_be_released:
-        del tensor
-    
-    # Garbage collection
-    for _ in range(15):
-        gc.collect()
-
-    return
-    
-def another_reset_keras():
-    sess = get_session()
-    clear_session()
-    sess.close()
-    sess = get_session()
-
-    try:
-        del classifier # this is from global space - change this as you need
-    except:
-        pass
-
-    print(gc.collect()) # if it's done something you should see a number being outputted
-
-    # use the same config as you used to create the session
-    config = keras.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = 1
-    config.gpu_options.visible_device_list = "0"
-    set_session(keras.Session(config=config))
-
-
-# This function keeps the weights and bias of a torch model in a way that hopefully doesnt bugs out.
-def keeping_torch_weights(torch_model, types, desired_type, saved_dict_weights):
-
-    try:
-        for layer in torch_model:
-            if type(layer) not in types:
-                keeping_torch_weights(layer, types, desired_type, saved_dict_weights)
-            elif type(layer) == desired_type:
-                with torch.no_grad():
-                    if desired_type == torch.nn.Conv1d:
-                        # saved_dict_weights['weights'].append(np.array((saved_dict_weights['weights'], layer.weight.data), dtype='object'))
-                        # saved_dict_weights['bias'].append(np.array((saved_dict_weights['bias'], layer.bias.data), dtype='object'))
-                        saved_dict_weights['weights'] = np.concatenate(saved_dict_weights['weights'], \
-                                                                       np.reshape(layer.weight.data, (layer.weight.data.shape[0],    \
-                                                                                                      layer.weight.data.shape[1],     \
-                                                                                                      layer.weight.data.shape[2], 1)), \
-                                                                       axis=3)
-                        saved_dict_weights['bias'] = np.concatenate(saved_dict_weights['bias'], \
-                                                               np.reshape(layer.bias.data, (layer.bias.data.shape[0], 1)), \
-                                                               axis=1)
-                        # saved_dict_weights['weights'].append(np.array((layer.weight.data), dtype='object'))
-                        # saved_dict_weights['bias'].append(np.array((layer.bias.data), dtype='object'))
-                    elif desired_type == torch.nn.BatchNorm1d:
-                        # saved_dict_weights['running_mean'].append(np.array((saved_dict_weights['running_mean'], layer.running_mean.data), dtype='object'))
-                        # saved_dict_weights['running_var'].append(np.array((saved_dict_weights['running_var'], layer.running_var.data), dtype='object'))
-                        # saved_dict_weights['weights'].append(np.array((saved_dict_weights['weights'], layer.weight.data), dtype='object'))
-                        # saved_dict_weights['bias'].append(np.array((saved_dict_weights['bias'], layer.bias.data), dtype='object'))
-                        saved_dict_weights['weights'] = np.concatenate(saved_dict_weights['weights'], \
-                                                               np.reshape(layer.weight.data, (layer.weight.data.shape[0], 1)), \
-                                                               axis=1)
-                        saved_dict_weights['bias'] = np.concatenate(saved_dict_weights['bias'], \
-                                                               np.reshape(layer.bias.data, (layer.bias.data.shape[0], 1)), \
-                                                               axis=1)
-                        saved_dict_weights['running_mean'] = np.concatenate(saved_dict_weights['running_mean'], \
-                                                               np.reshape(layer.running_mean.data, (layer.running_mean.data.shape[0], 1)), \
-                                                               axis=1)
-                        saved_dict_weights['running_var'] = np.concatenate(saved_dict_weights['running_var'], \
-                                                               np.reshape(layer.running_var.data, (layer.running_var.data.shape[0], 1)), \
-                                                               axis=1)
-                    elif desired_type == torch.nn.Linear:
-                        # saved_dict_weights['weights'].append(np.array((saved_dict_weights['weights'], layer.weight.data), dtype='object'))
-                        # saved_dict_weights['bias'].append(np.array((saved_dict_weights['bias'], layer.bias.data), dtype='object'))
-                        saved_dict_weights['weights'] = np.concatenate(saved_dict_weights['weights'], \
-                                                                       np.reshape(layer.weight.data, (layer.weight.data.shape[0],    \
-                                                                                                      layer.weight.data.shape[1],     \
-                                                                                                      layer.weight.data.shape[2], 1)), \
-                                                                       axis=3)
-                        saved_dict_weights['bias'] = np.concatenate(saved_dict_weights['bias'], \
-                                                               np.reshape(layer.bias.data, (layer.bias.data.shape[0], 1)), \
-                                                               axis=1)
-    except TypeError:
-        if type(torch_model) not in types:
-            # keeping_torch_weights(torch_model.children(), types, desired_type, saved_dict_weights)
-            keeping_torch_weights(list(torch_model._modules.values())[0], types, desired_type, saved_dict_weights)
-            
-    return torch_model
-
-
-# This function calls the 'keeping_torch_weights' function in a easier way.
-# I could have programed a class for it but I thought that it would be unnecessary
-def calling_keeping_torch_weights(torch_model, types, desired_types, path):
-    for desired_type in desired_types:
-        if desired_type == torch.nn.Conv1d or desired_type == torch.nn.Linear:
-            saved_dict_weights = {}
-            saved_dict_weights['weights'] = np.array([], ndmin=4)
-            saved_dict_weights['bias'] = np.array([], ndmin=2)
-            if desired_type == torch.nn.Conv1d:
-                name = 'conv'
-            elif desired_type == torch.nn.Linear:
-                name = 'linear'
-        elif desired_type == torch.nn.BatchNorm1d:
-            saved_dict_weights = {}
-            saved_dict_weights['weights'] = np.array([], ndmin=2)
-            saved_dict_weights['bias'] = np.array([], ndmin=2)
-            saved_dict_weights['running_mean'] = np.array([], ndmin=2)
-            saved_dict_weights['running_var'] = np.array([], ndmin=2)
-            name = 'batchnorm'
-        
-        keeping_torch_weights(torch_model, types, desired_type, saved_dict_weights)
-        if not saved_dict_weights['weights'].size:
-            raise ValueError(f"This is a costom error message! Check why was not save any weights for the {desired_type} layers. \
-                             Also, check if the given torch_model is what you expect. Try running the script in the \
-                             debugger mode to check the informations more accurately - if using VSCode: https://code.visualstudio.com/docs/editor/debugging")
-        
-        np.savez(f'{path}{name}.npz', **saved_dict_weights)
-
-    return
+#     # Saving a .gv of the model
+#     model_graph = torchview.draw_graph(model, input_size=(1, shape1, shape2),
+#                                     graph_name=f'{model_name}', hide_module_functions=False, depth=100)
+#     # I need to check if this line of code below is really necessary
+#     model_graph.visual_graph
+#     model_graph.visual_graph.save()
+#     # Saving a PDF of the model
+#     dot = graphviz.Source.from_file(f'{model_name}.gv')
+#     dot.render()
+#     return

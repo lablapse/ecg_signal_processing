@@ -19,8 +19,6 @@ def loading_results_and_generating_error_file(path='comparing_forward_keras_torc
         result_0 = result_0['arr_0']
         result_1 = np.load(f"{subdir_list[1]}/{file}")
         result_1 = result_1['arr_0']
-        # if file == 'conv.npz':
-        #     result_1 = np.transpose(result_1, axes=(0, 2, 1))
         
 
         error = calculation_the_errors(result_0, result_1)

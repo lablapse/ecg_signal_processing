@@ -7,15 +7,23 @@ from torch.utils.data import DataLoader, Dataset
 import tqdm
 import utils_general
 
+''' 
+    This script compiles a lot of functions used in the main script - grid_search_torch.py -.
+    The name - utils_torch.py -, is granted because it does have all the Pytorch code
+    used in the formulation of the model. This script is seized from the - utils_general.py -
+    script for debugging reasons.
+'''
+
 # Creating the kernel initializer for nn.Conv1d and nn.Linear 
 def _weights_init(m):
     '''
         This function will be called using self.apply(_weights_init) in some class later.
         Don't worry about 'm'.
+        This function sets the weights for Linear and Convolutional layers.
     '''
     classname = m.__class__.__name__
     if isinstance(m, nn.Linear) or isinstance(m, nn.Conv1d):
-        nn.init.kaiming_normal_(m.weight)
+        nn.init.kaiming_normal_(m.weight) # 'He normal' initialization
 
 # Creating the residual block to the Rajpurkar architecture
 class residual_blocks_rajpurkar_torch(nn.Module):
@@ -32,13 +40,11 @@ class residual_blocks_rajpurkar_torch(nn.Module):
         out_channels: int;
         rate_drop: float;
     '''
-    # Passing values to the object
+
     def __init__(self, i=0, stride=1, in_channels=64, out_channels=64, rate_drop=0.5):
         
-        # Calling the nn.Module 'constructor' 
         super(residual_blocks_rajpurkar_torch, self).__init__()
     
-        # Internalizing the input values
         self.i = i
         self.stride = stride
         self.in_channels = in_channels
@@ -49,12 +55,12 @@ class residual_blocks_rajpurkar_torch(nn.Module):
         # Some default 'torch.nn' values were modified to match the default ones presented in 'keras' 
         self.layer = nn.Sequential(nn.BatchNorm1d(num_features=self.in_channels, eps=0.001, momentum=0.99),
                                    nn.ReLU(),
-                                   nn.Dropout(p=self.rate_drop), # VER SE OS DROPOUTS ESTAO IGUAIS CONCEITUALMENTE -> torch: https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html keras -> https://keras.io/api/layers/regularization_layers/dropout/
+                                   nn.Dropout(p=self.rate_drop), 
                                    nn.Conv1d(in_channels=in_channels, out_channels=self.out_channels, kernel_size=16,
                                              stride=1, padding='same'),
                                    nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
                                    nn.ReLU(),
-                                   nn.Dropout(p=self.rate_drop) # VER SE OS DROPOUTS ESTAO IGUAIS CONCEITUALMENTE -> torch: https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html keras -> https://keras.io/api/layers/regularization_layers/dropout/
+                                   nn.Dropout(p=self.rate_drop) 
         )
         
         self.conv_after_layer = nn.Conv1d(in_channels=self.out_channels, out_channels=self.out_channels, kernel_size=16,
@@ -70,14 +76,11 @@ class residual_blocks_rajpurkar_torch(nn.Module):
         else:
             self.skip = nn.MaxPool1d(kernel_size=1, stride=self.stride)
 
-    # The operation function: the one that will calculate what is needed
     def forward(self, input):
         out = self.layer(input)
         out = F.pad(out, (8, 7))
         out = self.conv_after_layer(out)
         short = self.skip(input)
-        # if out.shape[2] != short.shape[2]:
-        #     out = nn.functional.pad(out, (0,1))
         out = out + short
         return out
     
@@ -92,13 +95,10 @@ class skip_connection_torch(nn.Module):
         downsample: int;
     '''
     
-    # Passing values to the object
     def __init__(self, in_channels=128, out_channels=128, downsample=1):
         
-        # Calling the nn.Module 'constructor' 
         super(skip_connection_torch, self).__init__()
     
-        # Internalizing the input values
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.downsample = downsample
@@ -109,12 +109,9 @@ class skip_connection_torch(nn.Module):
                                             kernel_size=1, stride=1, padding='same')
         )
     
-    # The operation function: the one that will calculate what is needed
     def forward(self, input):
         out = self.skip(input)
         return out
-    
-    
 
 class residual_blocks_ribeiro_torch(nn.Module):
     
@@ -129,20 +126,17 @@ class residual_blocks_ribeiro_torch(nn.Module):
         downsample: int;
     '''
     
-    # Passing values to the object
     def __init__(self, skip_connection, in_channels=128, out_channels=128, rate_drop=0, downsample=1):
         
-        # Calling the nn.Module 'constructor' 
         super(residual_blocks_ribeiro_torch, self).__init__()
-    
-        # Internalizing the input values
+
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.rate_drop = rate_drop
         self.downsample = downsample
         self.skip_connection = skip_connection
 
-        # This object will be summed with the skip_connection object at the 'forward()' method
+        # This object will be summed with the skip_connection object in the 'forward()' method
         self.layer_sum = nn.Sequential(nn.Conv1d(in_channels=self.in_channels, out_channels=self.out_channels, 
                                                  kernel_size=16, stride=1, padding='same'),
                                        nn.BatchNorm1d(num_features=self.out_channels, eps=0.001, momentum=0.99),
@@ -166,8 +160,6 @@ class residual_blocks_ribeiro_torch(nn.Module):
         layer = self.layer_sum(layer)
         layer = F.pad(layer, (8, 7))
         layer = self.conv_after_layer_sum(layer)
-        # if layer.shape[2] != skip.shape[2]:
-        #     skip = nn.functional.pad(skip, (0,1))
         layer = layer + skip
         skip = layer
         layer = self.layer_alone(layer)
@@ -183,24 +175,18 @@ class rajpurkar_torch(nn.Module):
         in_channels: int; 
     '''
     
-    # Passing values to the object
     def __init__(self, residual_blocks_rajpurkar_torch, rate_drop, in_channels):
         
-        # Calling the nn.Module 'constructor' 
         super(rajpurkar_torch, self).__init__()
         
-        #Internalizing the values
         self.rate_drop = rate_drop
         self.in_channels = in_channels
         self.residual_blocks_rajpurkar_torch = residual_blocks_rajpurkar_torch
         
-        
-        # Creating a 'dict' with values that will be used multiple times in nn.Conv1d() function
         self.conv_config = dict(in_channels=64, 
                                 out_channels=64, 
                                 kernel_size=16
         )
-        
         
         # Creating the first block
         self.layer_to_be_passed = nn.Sequential(nn.Conv1d(in_channels=self.in_channels,
@@ -257,7 +243,6 @@ class rajpurkar_torch(nn.Module):
         # 'nn.Conv1d()', 'nn.Linear()' weights.
         self.apply(_weights_init)
     
-    # Calculating "Rajpurkar's" model
     def forward(self, input):
         layer = self.layer_to_be_passed(input)
         skip = self.skip_alone(layer)
@@ -281,13 +266,10 @@ class ribeiro_torch(nn.Module):
         downsample: int;
     '''
     
-    # Passing values to the object
     def __init__(self, residual_blocks_ribeiro_torch, skip_connection_torch, rate_drop, in_channels, downsample):
         
-        # Calling the nn.Module 'constructor' 
         super(ribeiro_torch, self).__init__()
         
-        #Internalizing the values
         self.rate_drop = rate_drop
         self.in_channels = in_channels
         self.downsample = downsample
@@ -301,13 +283,12 @@ class ribeiro_torch(nn.Module):
                                            nn.ReLU()
         )
     
-        # The channels dimensions
+        # The channels list
         self.num_channels = np.array([64, 128, 192, 256, 320])
         
         # Crating the list that will receive the middle blocks
         middle_layers_list = nn.ModuleList()
         
-        # Appending to 'middle_layers_list'
         for i in range(4):
             middle_layers_list.append(self.residual_blocks_ribeiro_torch(self.skip_connection_torch, self.num_channels[i], 
                                                                          self.num_channels[i+1], self.rate_drop, self.downsample))
@@ -318,13 +299,13 @@ class ribeiro_torch(nn.Module):
         # Output block
         self.layer_end = nn.Sequential(nn.Flatten(),
                                        nn.Linear(1280, 5),
-                                       nn.Sigmoid())
+                                       nn.Sigmoid()
+                                       )
             
         # This applies to this module and all children of it. This line below initializes the 
         # 'nn.Conv1d()', 'nn.Linear()' weights.
         self.apply(_weights_init)
 
-    # Calculating "Ribeiro's" model
     def forward(self, input):
         input = self.layer_initial(input)
         input = self.layers_middle((input, input))
@@ -345,7 +326,7 @@ class CustomDataset(Dataset):
         current_label = self.labels[idx, :]
         return current_sample, current_label
     
-# Function that will load the data and return a custom dataloader
+# Function that will load the data and return a custom dataset
 def creating_datasets(test=False, only_test=False):
     
     '''
@@ -358,6 +339,9 @@ def creating_datasets(test=False, only_test=False):
  
     return:
         returns a list of the train, val and/or test of the custom datasets;
+
+    If 'only_test' is True, the returned list have length of 2, otherwise, 
+    the length is 6.
     '''
     
     if only_test:
@@ -392,7 +376,7 @@ def creating_dataloaders(datasets, batch_size):
     This function creates DataLoaders to be used with Pytorch.
     
     inputs:
-        datasets: the list returned from 'creating_datasets'. A list of CustomDataset.
+        datasets: preferable the list returned from 'creating_datasets'. A list of CustomDataset.
         batch_size: int -> the batch size used;
         
     return:
@@ -412,7 +396,7 @@ def creating_dataloaders(datasets, batch_size):
     
     if len(datasets) == 3:
         # Creating the test DataLoader
-        dataloaders.append(DataLoader(datasets[1], batch_size=batch_size))
+        dataloaders.append(DataLoader(datasets[2], batch_size=batch_size))
         
     return dataloaders
         
@@ -420,40 +404,38 @@ def creating_dataloaders(datasets, batch_size):
 def creating_the_kwargs(model_name, optimizer, learning_rate):
     
     '''
-    This fuction receives a string with the desidred model name, a optimizer funtion from torch.optim, 
+    This fuction receives a string with the desidred model name, a optimizer funtion from 'torch.optim', 
     a desired learning rate and returns the torch class model with a dictionary of what will 
     later be **kwargs to other function or class, and the same optimizer function and learning rate passed
-    as a argument to this function.
+    as a argument to this function. It's made this way because it's easier to debug and 
+    create the models.
     '''
 
 
-    # Selecting the model that will be called
     if model_name == 'rajpurkar':
-        # Selecting "Rajpurkar's" model
         model = rajpurkar_torch
         arguments = dict(residual_blocks_rajpurkar_torch=residual_blocks_rajpurkar_torch,
-                         rate_drop=0.5,
+                         rate_drop=0.2,
                          in_channels=12
         )
         
     elif model_name == 'ribeiro':    
-        # Selecting "Ribeiro's" model
         model = ribeiro_torch
         arguments = dict(residual_blocks_ribeiro_torch=residual_blocks_ribeiro_torch,
                          skip_connection_torch=skip_connection_torch,
-                         rate_drop=0.5,
+                         rate_drop=0.2,
                          in_channels=12,
                          downsample=4
         )
         
     else:
-        # Raising an error if an invalid string was passed
         raise NameError(" Wrong Name. Allowed names are 'rajpurkar' and 'ribeiro'. ") 
     
     optim = optimizer
     
     return model, arguments, optim, learning_rate
 
+# A function to help with memory issues.
 class ClearCache:
     def __enter__(self):
         gc.collect()
@@ -464,6 +446,22 @@ class ClearCache:
         torch.cuda.empty_cache()
         
 def computate_predictions(model, dataset, size_test):
+
+    '''
+    This function computes the predictions of the model.
+
+    inputs:
+        model: the trained Pytorch model;
+        dataset: the dataset used for the predictions;
+        size_test: it's something like a 'batch size'. It will divide the 'dataset'
+        into smaller chuncks to help with memory problems;
+        
+    return:
+        prediction_bin: the binary predictions. It have a shape of (quantity, predictions).
+                        In the 'predictions' dimension, 0 is False and 1 is True, assigning the label.                        
+
+    '''
+
     # Creating the list that will receive the predictions
     prediction_bin = np.empty(dataset.labels.shape)
 
@@ -471,78 +469,74 @@ def computate_predictions(model, dataset, size_test):
         size_test = dataset.labels.shape[0]
 
     # Iterating trought the dataset. I was having GPU memory issues, so I made the code this way.
-    # The must have a proper way to do this.
+    # There must have a proper way to do this.
     for i in tqdm.tqdm(range(dataset.labels.shape[0]//size_test)):
         with ClearCache():
             first = (i*size_test)
             second = ((i+1)*size_test)
             
             passing = torch.tensor(dataset.data[first:second]).cuda()
-            # Passing data to the loaded model and collecting the result
             prediction = model(passing)
             del passing
                                             
-            # Moving the data from cuda to cpu because I was having some issues with numpy
             prediction = prediction.to('cpu')
             
-            # Converting to numpy array
             prediction = prediction.detach().numpy()
             
             # Applying a threshold to the data and appending to prediction_bin
             prediction_bin[first:second] = (prediction > 0.5).astype(np.float32)
 
-            # deleting prediction. Don't know if it's necessary.
             del prediction
         
     if (dataset.labels.shape[0]//size_test)*size_test != dataset.labels.shape[0]:
         first = ((dataset.labels.shape[0]//size_test))*size_test
         with ClearCache():
             passing = torch.tensor(dataset.data[first:-1]).cuda()
-            # Passing data to the loaded model and collecting the result
             prediction = model(passing)
             del passing
             
-            # Moving the data from cuda to cpu because I was having some issues with numpy
+            # Moving the data from cuda to cpu
             prediction = prediction.to('cpu')
-            
-            # Converting to numpy array
+
             prediction = prediction.detach().numpy()
             
             # Applying a threshold to the data and appending to prediction_bin
             prediction_bin[first:-1] = (prediction > 0.5).astype(np.float32)
-            
-            # deleting prediction. Don't know if it's necessary.
+
             del prediction
         
     return prediction_bin
 
-# This function receives any torch model and searches for a desired type
-def searching_layer_torch(torch_model, types, desired_type, list_with_found_layers):
-    
-    '''
-    The objective of this function is to search for specific layers in a torch model.
-    Doing this, it's possible, for exemple, to see a copy of the weights of all Conv1d layers
-    in a torch model. Probably there is a smarter/builted-in way to do this, but, at 
-    this moment, I could not find it.  
-    
-    This function returns a list with the found layers.
-    '''
-    
-    try:
-        for layer in torch_model:
-            if type(layer) not in types:
-                searching_layer_torch(layer, types, desired_type, list_with_found_layers)
-            if type(layer) == desired_type:
-                list_with_found_layers.append(layer)
-    except TypeError:
-        if type(torch_model) not in types:
-            searching_layer_torch(torch_model.children(), types, desired_type, list_with_found_layers)
-            
-    return list_with_found_layers
+''' The functions below are failed attempts to write code with another possibilities. They were not 
+destroyed because they can be rewrite in future time.'''
 
-def easy_calling_searching_layer_torch(torch_model):
-    types = [nn.BatchNorm1d, nn.ReLU, nn.Sigmoid, nn.Dropout1d, nn.MaxPool1d]
-    desired_type = nn.Conv1d
+# # This function receives any torch model and searches for a desired type
+# def searching_layer_torch(torch_model, types, desired_type, list_with_found_layers):
     
-    list_with_found_layers = searching_layer_torch(torch_model, types, desired_type, [])
-    return list_with_found_layers
+#     '''
+#     The objective of this function is to search for specific layers in a torch model.
+#     Doing this, it's possible, for exemple, to see a copy of the weights of all Conv1d layers
+#     in a torch model. Probably there is a smarter/builted-in way to do this, but, at 
+#     this moment, I could not find it.  
+    
+#     This function returns a list with the found layers.
+#     '''
+    
+#     try:
+#         for layer in torch_model:
+#             if type(layer) not in types:
+#                 searching_layer_torch(layer, types, desired_type, list_with_found_layers)
+#             if type(layer) == desired_type:
+#                 list_with_found_layers.append(layer)
+#     except TypeError:
+#         if type(torch_model) not in types:
+#             searching_layer_torch(torch_model.children(), types, desired_type, list_with_found_layers)
+            
+#     return list_with_found_layers
+
+# def easy_calling_searching_layer_torch(torch_model):
+#     types = [nn.BatchNorm1d, nn.ReLU, nn.Sigmoid, nn.Dropout1d, nn.MaxPool1d]
+#     desired_type = nn.Conv1d
+    
+#     list_with_found_layers = searching_layer_torch(torch_model, types, desired_type, [])
+#     return list_with_found_layers

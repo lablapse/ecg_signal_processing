@@ -1,10 +1,4 @@
-import utils
-import utils_general
-import utils_torch
-import utils_lightning
-
 import numpy as np
-import torch
 import keras
 import pickle
 import tqdm
@@ -24,4 +18,3 @@ with open('dimensoes_weights_keras.txt', 'r') as f:
         matrix.append(np.array(list(matrix_atual)))
 with open("matrizes_weight_keras", "wb") as fp: # https://stackoverflow.com/questions/27745500/how-to-save-a-list-to-a-file-and-read-it-as-a-list-type
     pickle.dump(matrix, fp)
-print()

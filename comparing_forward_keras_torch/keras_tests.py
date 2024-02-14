@@ -14,12 +14,10 @@ def calculate_and_save(keras_operation, numpy_array, path='comparing_forward_ker
     assert numpy_array.dtype == np.float32
 
     if keras_operation == Conv1D:
-        # numpy_array = np.transpose(numpy_array, axes=(0, 2, 1))
         
         result = keras_operation(numpy_array.shape[2] * 2, 1, kernel_initializer='ones', bias_initializer='zeros')(numpy_array)
 
         assert result.shape == (numpy_array.shape[0], numpy_array.shape[1], numpy_array.shape[2] * 2)
-        # numpy_array = np.transpose(numpy_array, axes=(0, 2, 1))
 
         name = 'conv'
 
@@ -64,7 +62,6 @@ data = np.load('comparing_forward_keras_torch/informacao_para_as_comparacoes.npz
 numpy_array = data['arr_0']
 numpy_array = np.transpose(numpy_array, axes=(0, 2, 1))
 
-# keras_operations = [Conv1D, BatchNormalization, ReLU, Dense]
 keras_operations = [Conv1D, BatchNormalization, ReLU, sigmoid, Dense]
 
 for keras_operation in keras_operations:

@@ -1,5 +1,4 @@
 import numpy as np
-import os
 import pathlib
 import torch
 import torch.nn as nn
@@ -59,7 +58,7 @@ def calculate_and_save(torch_operation, numpy_array, path='comparing_forward_ker
             name = 'linear'
 
         else:
-            raise ValueError(f'Missing if statements or exciding torch operations or something mysteryous that should be investigated.')
+            raise ValueError(f'Missing if statements or exciding torch operations.')
 
     path = pathlib.Path(f'{path}{name}.npz')
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,7 +71,6 @@ data = np.load('comparing_forward_keras_torch/informacao_para_as_comparacoes.npz
 numpy_array = data['arr_0']
 
 torch_operations = [nn.Conv1d, nn.BatchNorm1d, nn.ReLU, nn.Sigmoid, nn.Linear]
-# torch_operations = [nn.Conv1d, nn.BatchNorm1d, nn.ReLU, nn.Linear]
 
 for torch_operation in torch_operations:
     calculate_and_save(torch_operation, numpy_array)

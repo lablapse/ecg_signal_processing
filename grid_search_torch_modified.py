@@ -76,8 +76,8 @@ parameters = {
             'batch_size': [16, 32, 64, 128, 256],\
             'optimizer': [torch.optim.SGD, torch.optim.RMSprop, torch.optim.Adam],\
             'learning_rate': [0.001, 0.01, 0.1],\
-            # 'model_name': ['rajpurkar', 'ribeiro']
-            'model_name': ['ribeiro']
+            'model_name': ['rajpurkar', 'ribeiro']
+            # 'model_name': ['ribeiro']
             }
 csv_file_path = 'grid_search_results_torch.csv'
 
@@ -131,16 +131,17 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     model_path_complete.parent.mkdir(parents=True, exist_ok=True)
 
     # Checkpoint callback to save the model
-    checkpoint_callback = callback.ModelCheckpoint(dirpath=model_path, filename='model', 
-                                                monitor='train_loss', save_top_k=1, mode='min')
+    checkpoint_callback = callback.ModelCheckpoint(dirpath=model_path, filename='model', monitor='val_loss', save_top_k=1, mode='min')
     # Receiving information from the model
     rich_callback = callback.RichModelSummary(max_depth=3)
 
     # Early stopping callback
-    early_stopping_callback = callback.EarlyStopping(monitor="val_loss", mode="min", patience=10)
+    early_stopping_callback = callback.EarlyStopping(monitor="val_loss", mode="min", patience=15, verbose=True)
+    # early_stopping_callback = callback.EarlyStopping(monitor="val_loss", mode="min", patience=50, verbose=True)
 
     # Accumulating callbacks in a list
     callbacks = [checkpoint_callback, rich_callback, early_stopping_callback]
+    # callbacks = [checkpoint_callback, rich_callback]
 
     # Defining loggers
     # TensorBoard logger
@@ -157,11 +158,6 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
 
     # Fitting the model
     trainer.fit(model, train_dataloaders=dataloaders[0], val_dataloaders=dataloaders[1])
-
-    # Saving the weights in a easy way to access later by numpy
-    # types = [torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.Dropout1d, torch.nn.Conv1d, torch.nn.Linear, torch.nn.BatchNorm1d]
-    # desired_types = [torch.nn.Conv1d, torch.nn.Linear, torch.nn.BatchNorm1d]
-    # utils_general.calling_keeping_torch_weights(torch_model=model, types=types, desired_types=desired_types, path=model_path) 
     
     # Loading the model
     loaded_model = utils_lightning.LitModel.load_from_checkpoint(model_path_complete)
@@ -169,7 +165,7 @@ for index, (batch_size, optimizer, learning_rate, model_name) in remaining_combi
     loaded_model.freeze()
     
     # Computating the training predictions
-    prediction_bin_train = utils_torch.computate_predictions(loaded_model, datasets[0], 5000)
+    prediction_bin_train = utils_torch.computate_predictions(loaded_model, datasets[0], 2327)
 
     # Get the report using the MLCM confusion matrix
     print('\n MLCM - Train')

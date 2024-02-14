@@ -1,7 +1,12 @@
 import pytorch_lightning as pl
 import torch
 
-# Creating the Lightning class to have access to some convenient features
+'''
+This script uses a library called 'pytorch lightning' -> https://lightning.ai/docs/pytorch/stable/ 
+This library is used because Pytorch doesn't have some functions that Tensorflow/keras have. 
+'''
+
+# Creating the Lightning class to have access to some convenient features from pytorch lightning
 class LitModel(pl.LightningModule):
     
     '''
@@ -11,31 +16,24 @@ class LitModel(pl.LightningModule):
         **kwargs: key-arguments that will be used to properly create the passed model;
     '''
     
-    # Passing values to the __init()__ function
     def __init__(self, model, optimizer, learning_rate, optim_kwargs, **kwargs):
         
-        # Calling the pl.LightningModule 'constructor'
         super(LitModel, self).__init__()
         
         # Saving hiperparameters
         self.save_hyperparameters()
         
-        # Internalizing inputed the model
         self.model = model(**kwargs)
         
-        # Selecting the loss function
-        self.metric = torch.nn.BCELoss(reduction='sum')
-        
+        # Selecting the loss function and other hiperparameters
+        self.metric = torch.nn.BCELoss(reduction='mean')
         self.optimizer_function = optimizer
         self.optim_kwargs = optim_kwargs
         self.learning_rate = learning_rate
 
-    # Creating the 'forward()' function
     def forward(self, input):
-        # this calls the 'forward()' function of the selected model
         return self.model.forward(input)
 
-    # This selects the optimizer and the learning rate of the selected model
     def configure_optimizers(self):
         self.optimizer = self.optimizer_function(self.parameters(), lr=self.learning_rate, **self.optim_kwargs)
         self.schedular = {'scheduler':torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -44,7 +42,8 @@ class LitModel(pl.LightningModule):
             factor=0.5,
             patience=10,
             min_lr=1e-6,
-            verbose=True
+            verbose=True,
+            eps=0
         ), 'monitor':'val_loss'}
         return {'optimizer': self.optimizer, 'lr_scheduler': self.schedular}
 
@@ -82,7 +81,7 @@ def creating_the_model(model_kwargs):
     This function receives its inputs from the returned values of 
     "utils_torch.py -> 'creating_the_kwargs'" function
     and returns the selected model. It also selects the values for 
-    the selected optimizer to match the default used in keras.
+    the selected optimizer to match the default ones used in keras.
     '''
     
     if torch.optim.Adam == model_kwargs[2]:
@@ -92,8 +91,8 @@ def creating_the_model(model_kwargs):
         optim_kwargs = {"alpha":0.9, "eps":1e-7}
         
     if torch.optim.SGD == model_kwargs[2]:
-        optim_kwargs = {"momentum":0} # Not really necessary to put this one here like this, I am just maintaining the pattern
+        optim_kwargs = {"momentum":0} # Not really necessary to put this one here like this, I am just maintaining a pattern
         
-    
+    # the arguments are -> model, optimizer, learning_rate, optim_kwargs, **kwargs. 
     model = LitModel(model_kwargs[0], model_kwargs[2], model_kwargs[3], optim_kwargs, **model_kwargs[1])
     return model
