@@ -6,7 +6,7 @@ Doenças cardiovasculares vêm figurando, no decorrer das últimas décadas, den
 # Contexto geral
 
 
-Este trabalho é derivado de outro [trabalho realizado]([url](https://github.com/lablapse/ecg_signal_processing.git)https://github.com/lablapse/ecg_signal_processing.git) aonde se emprega
+Este trabalho é derivado de outro [trabalho realizado](https://github.com/lablapse/ecg_signal_processing.git) aonde se emprega
 
 
 O que dizer -> Falar que este trabalho se deriva de outro trabalho.
