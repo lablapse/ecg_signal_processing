@@ -19,11 +19,24 @@ Como a biblioteca com a qual o trabalho foi originalmente desenvolvido - [keras]
 
 ## Conceitos e comportamentos de classes e funções
 
-Algumas operações diferem conceitualmente entre as bibliotecas. Por exemplo, os inicializadores, que neste caso foi utilizado '[He normal](https://arxiv.org/abs/1502.01852)'. Para o _Keras_, [este inicializador](https://keras.io/api/layers/initializers/) utiliza como base uma distribuição normal truncada, enquanto, para o _Pytorch_, a distribuição base não é truncada. Esta diferença por si só já é o suficiente para alterar completamente a performance das duas redes neurais. 
+Algumas operações diferem conceitualmente entre as bibliotecas. Por exemplo, o inicializador, que, neste caso, foi utilizado o qual geralmente se denomina '[He normal](https://arxiv.org/abs/1502.01852)'. Para o _Keras_, [este inicializador](https://keras.io/api/layers/initializers/) utiliza como base uma distribuição normal truncada, enquanto, para o _Pytorch_, a distribuição base não é truncada. Esta diferença por si só já é o suficiente para alterar completamente a performance das duas redes neurais por alterar os valores de inicialização. Além disso, lendo as documentações, sugerem-se diferenças de comportamento entre a operação de _dropout_, que vale ser investigado. 
+
+## Análise de _forward_, _backward_ e os gradientes
+
+### _Forward_
+
+Para garantir que as operações utilizadas resultam em valores equiparáveis durante o processo de _forward_, foi realizado o seguinte procedimento:
+
+- Foi gerado e salvo um array aleatório de tipo _float32_, utilizando-se a função [_rand_](https://numpy.org/doc/stable/reference/random/generated/numpy.random.rand.html), com dimensões (amostras, canais, tamanho), para ser utilizado na análise a seguir. 
+- Criou-se três ambientes [conda](https://www.anaconda.com/download), um contendo o _keras_, outro contendo o _pytorch_ e outro sem nenhum desses _frameworks_.
+- Dois _scripts_ separados, um para cada ambiente _conda_ que contém _framework_, foi criado uma função com diversas operações, entre elas convolução unidimensional e _batch normalization_ que, ao receber o _array_ gerado anteriormente, o inseriria nas operações e salvaria os resultados individuais.
+- Um terceiro _script_, feito sem nenhum dos dois _frameworks_, carrega os resultados gerados anteriormente e os compara, utilizando as [normas](https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html) dos novos vetores, e salva estes resultados em uma pasta.
 
 
 
 
+
+Ademais, a operação de _batch normalization_ do _keras_ apresenta comportamentos distintos durante o treinamento e a validação, o que serve de obstáculo para a análise direta 
 
 O que dizer -> Falar que este trabalho se deriva de outro trabalho.
                Falar que o trabalho original implementa duas arquiteturas para a classificação de ECG.
