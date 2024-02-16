@@ -15,7 +15,9 @@ Este trabalho reimplementa, em [Pytorch](https://pytorch.org), o código desenvo
 
 # Principais problemas
 
-Como a 
+Como a biblioteca aonde o trabalho foi originalmente desenvolvido - [keras]([url](https://www.tensorflow.org/guide/keras?hl=pt-br)) - e a biblioteca aonde o novo código foi escrito são diferentes, os resultados obtidos pelas pesquisas de hiperparâmetros se mostraram consideravelmente distintos. De uma maneira geral, o trabalho em [Pytorch](https://pytorch.org) performou pior. Para encontrar aonde os _frameworks_ diferiam em performance, diversos estudos foram realizados:
+
+## 
 
 
 
