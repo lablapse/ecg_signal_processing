@@ -59,15 +59,3 @@ Vou compartilhar pequenos pontos, óbvios ou não, que obrigatoriamente não dev
 - Caso os _scripts_ envolvendo o _keras_ se recussem a serem executados, saiba que isso aconteceu comigo. Destrua e reconstrua o ambiente _keras_ para **tentar** solucionar o problema.
 - E mais importante, **se precisa peça ajuda**.
 
-
-Ademais, a operação de _batch normalization_ do _keras_ apresenta comportamentos distintos durante o treinamento e a validação, o que serve de obstáculo para a análise direta 
-
-O que dizer -> Falar que este trabalho se deriva de outro trabalho.
-               Falar que o trabalho original implementa duas arquiteturas para a classificação de ECG.
-               Falar que o trabalho original implementa um busca exaustiva de hiperparâmetros.
-               Falar que este trabalho implementa praticametne tudo o que o está disponível no trabalho original, porém, ao invés de torch e keras.
-               Falar que como a conversão do keras para o torch nao é direta, fragmentos de funções e classes foram comparadas.
-               Falar sobre a conclusão de algumas diferenças (he normal, talvez dropout)
-               Alertar o próximo programador sobre coisas como a dimensão dos filtros em torch e keras.
-               Alertar o próximo programador sobre como em duas ocasiões distintas o ambiente do tensorflow simplesmente recusou o comando de run do script.
-               Alertar o próximo programador sobre não instalar um ambiente com o torch e o keras ao mesmo tempo.
