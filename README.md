@@ -15,9 +15,13 @@ Este trabalho reimplementa, em [Pytorch](https://pytorch.org), o código desenvo
 
 # Principais problemas
 
-Como a biblioteca aonde o trabalho foi originalmente desenvolvido - [keras]([url](https://www.tensorflow.org/guide/keras?hl=pt-br)) - e a biblioteca aonde o novo código foi escrito são diferentes, os resultados obtidos pelas pesquisas de hiperparâmetros se mostraram consideravelmente distintos. De uma maneira geral, o trabalho em [Pytorch](https://pytorch.org) performou pior. Para encontrar aonde os _frameworks_ diferiam em performance, diversos estudos foram realizados:
+Como a biblioteca com a qual o trabalho foi originalmente desenvolvido - [keras]([url](https://www.tensorflow.org/guide/keras?hl=pt-br)) - e a biblioteca aonde o novo código foi escrito são diferentes, os resultados obtidos pelas pesquisas de hiperparâmetros se mostraram consideravelmente distintos. De uma maneira geral, o trabalho em [Pytorch](https://pytorch.org) performou pior. Para encontrar aonde os _frameworks_ diferiam em performance, diversos estudos foram realizados.
 
-## 
+## Conceitos e comportamentos de classes e funções
+
+Algumas operações diferem conceitualmente entre as bibliotecas. Por exemplo, os inicializadores, que neste caso foi utilizado '[He normal](https://arxiv.org/abs/1502.01852)'. Para o _Keras_, [este inicializador](https://keras.io/api/layers/initializers/) utiliza como base uma distribuição normal truncada, enquanto, para o _Pytorch_, a distribuição base não é truncada. Esta diferença por si só já é o suficiente para alterar completamente a performance das duas redes neurais. 
+
+
 
 
 
