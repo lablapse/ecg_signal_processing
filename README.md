@@ -8,7 +8,7 @@ Doenças cardiovasculares vêm figurando, no decorrer das últimas décadas, den
 
 Este trabalho reimplementa, em [Pytorch](https://pytorch.org), o código desenvolvido em um [trabalho realizado](https://github.com/lablapse/ecg_signal_processing.git) anteriormente. Desta forma, os códigos traduzidos se disponibilizam nos seguintes *scripts*:
 
-- As arquiteturas de classificação de eletrocardiograma (ECG) estão disponibilizadas em [utils_torch.py](utils_torch.py) e em [utils_lightning.py](utils_lightning.py). O primeiro *script* contém as informações para construir os modelos. O segundo *script* utiliza uma biblioteca denominada [pytorch lightning](utils_lightning.py) para realmente criar os modelos, inserindo a função custo, *learning rate* e outras informações sobre a rede neural, além de facilitar questões envolvendo treinamento e outras questões. 
+- As arquiteturas de classificação de eletrocardiograma (ECG) estão disponibilizadas em [utils_torch.py](utils_torch.py) e em [utils_lightning.py](utils_lightning.py). O primeiro *script* contém as informações para construir os modelos. O segundo *script* utiliza uma biblioteca denominada [pytorch lightning](utils_lightning.py) para realmente criar os modelos, inserindo, assim,  a função custo, *learning rate* e outras informações, além de facilitar questões envolvendo treinamento e manipulação das redes neurais.
 
 
 O que dizer -> Falar que este trabalho se deriva de outro trabalho.
