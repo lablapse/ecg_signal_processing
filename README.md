@@ -15,6 +15,8 @@ Este trabalho reimplementa, em [Pytorch](https://pytorch.org), o código desenvo
 
 # Principais problemas
 
+Como a 
+
 
 
 O que dizer -> Falar que este trabalho se deriva de outro trabalho.
