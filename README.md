@@ -36,7 +36,13 @@ Foi constatado que as operações analisadas geram resultados semelhantes e as i
 
 ### _Backward_ e gradientes
 
-A análise de _backward_ e de gradiente é mais complexa que a anterior, afinal, para ela funcionar corretamente deve-se possuir uma função custo e um otimizador, além de ser necessário que seja realizada uma operação de _forward_ poder fazer a etapa de _backward_. Como este passo é mais intrincado que o anterior, não será tão detalhado, porém, a lógica de ambas as análises opera de maneira semelhante: um _script_ para cada ambiente e um teiceiro _script_ sem nenhum dos dois _frameworks_. Neste caso foi montado um modelo com diversas operações e os valores salvos por cada _script_ correspondem à uma opearação de _forward_ nestes modelos
+A análise de _backward_ e de gradiente é mais complexa que a anterior, afinal, para ela funcionar corretamente se deve possuir uma função custo e um otimizador, além de ser necessário que seja realizada uma operação de _forward_ poder fazer a etapa de _backward_. Como este passo é mais intrincado que o anterior, não será tão detalhado, porém, a lógica de ambas as análises opera de maneira semelhante: um _script_ para cada ambiente e um teiceiro _script_ sem nenhum dos dois _frameworks_. Neste caso foi montado um modelo com diversas operações e os valores salvos por cada _script_ correspondem à uma opearação de _forward_ neste modelo, aos valores coletados dos gradientes, e à outra operação de _forward_ após a operação de _backward_. Então, em um terceiro _script_ os resultados são comparados se utilizando as [normas](https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html) dos vetores.
+
+Assim, constatou-se que os valores gerados neste cenário são significativamente diferentes. Além disso, a função de [batch normalization](https://keras.io/api/layers/normalization_layers/batch_normalization/) do _keras_ opera de forma distinta durante o treinamento e a validação, o que dificulta a análise. 
+
+Ademais, o _keras_ possui uma programação menos acessível aos valores de gradientes, o que gera problema novos para a análise deste resultados.
+
+Estas informações podem ser acessadas na pasta [comparing_backward_keras_torch](comparing_backward_keras_torch).
 
 
 
