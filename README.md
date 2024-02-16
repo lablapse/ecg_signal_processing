@@ -32,7 +32,11 @@ Para garantir que as operações utilizadas resultam em valores equiparáveis du
 - Em dois _scripts_ separados, um para cada ambiente _conda_ que contém _framework_, foi criado uma função com diversas operações, entre elas convolução unidimensional e _batch normalization_ que, ao receber o _array_ gerado anteriormente, o inseriria nas operações e salvaria os resultados individuais.
 - Um terceiro _script_, feito sem nenhum dos dois _frameworks_, carrega os resultados gerados anteriormente e os compara, utilizando as [normas](https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html) dos novos vetores, e salva estes resultados em uma pasta.
 
+Foi constatado que as operações analisadas geram resultados semelhantes. 
 
+### _Backward_ e gradientes
+
+A análise de _backward_ e de gradiente é mais complexa que a anterior, afinal, para ela funcionar corretamente deve-se possuir uma função custo e um otimizador, além de ser necessário que seja realizada uma operação de _forward_ poder fazer a etapa de _backward_. 
 
 
 
