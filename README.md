@@ -29,7 +29,7 @@ Para garantir que as operações utilizadas resultam em valores equiparáveis du
 
 - Foi gerado e salvo um array aleatório de tipo _float32_, utilizando-se a função [_rand_](https://numpy.org/doc/stable/reference/random/generated/numpy.random.rand.html), com dimensões (amostras, canais, tamanho), para ser utilizado na análise a seguir. 
 - Criou-se três ambientes [conda](https://www.anaconda.com/download), um contendo o _keras_, outro contendo o _pytorch_ e outro sem nenhum desses _frameworks_.
-- Dois _scripts_ separados, um para cada ambiente _conda_ que contém _framework_, foi criado uma função com diversas operações, entre elas convolução unidimensional e _batch normalization_ que, ao receber o _array_ gerado anteriormente, o inseriria nas operações e salvaria os resultados individuais.
+- Em dois _scripts_ separados, um para cada ambiente _conda_ que contém _framework_, foi criado uma função com diversas operações, entre elas convolução unidimensional e _batch normalization_ que, ao receber o _array_ gerado anteriormente, o inseriria nas operações e salvaria os resultados individuais.
 - Um terceiro _script_, feito sem nenhum dos dois _frameworks_, carrega os resultados gerados anteriormente e os compara, utilizando as [normas](https://numpy.org/doc/stable/reference/generated/numpy.linalg.norm.html) dos novos vetores, e salva estes resultados em uma pasta.
 
 
