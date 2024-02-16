@@ -57,6 +57,7 @@ Vou compartilhar pequenos pontos, óbvios ou não, que obrigatoriamente não dev
 - Ler com cuidado toda a documentação das funções e classes, afinal, as operações analisadas podem, inesperadamente, diferir do comportamento imaginado.
 - Não misturar os ambientes de _keras_ e _torch_, obtive muitos problemas especificamente por causa disso.
 - Caso os _scripts_ envolvendo o _keras_ se recussem a serem executados, saiba que isso aconteceu comigo. Destrua e reconstrua o ambiente _keras_ para **tentar** solucionar o problema.
+- E mais importante, **se precisa peça ajuda**.
 
 
 Ademais, a operação de _batch normalization_ do _keras_ apresenta comportamentos distintos durante o treinamento e a validação, o que serve de obstáculo para a análise direta 
