@@ -10,7 +10,12 @@ Este trabalho reimplementa, em [Pytorch](https://pytorch.org), o código desenvo
 
 - As arquiteturas de classificação de eletrocardiograma (ECG) estão disponibilizadas em [utils_torch.py](utils_torch.py) e em [utils_lightning.py](utils_lightning.py). O primeiro *script* contém as informações para construir os modelos. O segundo *script* utiliza uma biblioteca denominada [pytorch lightning](utils_lightning.py) para realmente criar os modelos, inserindo, assim, a função custo, *learning rate* e outras informações, além de facilitar questões envolvendo treinamento e manipulação das redes neurais.
 
-- A busca exaustiva de hiperparâmetros pode ser acessada em [grid_search_torch.py](grid_search_torch.py). Durante a modificação do _script_, algumas coisas não foram adaptadas, pois seriam posteriormente - à exemplo disso, algumas informações não são coletadas e salvas no arquivo _.csv_ conforme feito no trabalho implementado anteriormente.
+- A busca exaustiva de hiperparâmetros pode ser acessada em [grid_search_torch.py](grid_search_torch.py). Durante a modificação do _script_, algumas coisas não foram adaptadas - à exemplo disso, algumas informações não são coletadas e salvas no arquivo _grid_search_results_torch.csv_ conforme feito no trabalho implementado anteriormente.
+
+
+# Principais problemas
+
+
 
 O que dizer -> Falar que este trabalho se deriva de outro trabalho.
                Falar que o trabalho original implementa duas arquiteturas para a classificação de ECG.
