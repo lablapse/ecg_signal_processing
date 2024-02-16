@@ -15,7 +15,7 @@ Este trabalho reimplementa, em [Pytorch](https://pytorch.org), o código desenvo
 
 # Principais problemas
 
-Como a biblioteca com a qual o trabalho foi originalmente desenvolvido - [keras](https://www.tensorflow.org/guide/keras?hl=pt-br) - e a biblioteca aonde o novo código foi escrito são diferentes, os resultados obtidos pelas pesquisas de hiperparâmetros se mostraram consideravelmente distintos. De uma maneira geral, o trabalho em [Pytorch](https://pytorch.org) performou pior. Para encontrar aonde os _frameworks_ diferiam em performance, diversos estudos foram realizados.
+Como a biblioteca com a qual o trabalho foi originalmente desenvolvido - [keras](https://www.tensorflow.org/guide/keras?hl=pt-br) - e a biblioteca aonde o novo código foi escrito são diferentes, os resultados obtidos pelas pesquisas de hiperparâmetros se mostraram consideravelmente distintos. De uma maneira geral, o trabalho em [Pytorch](https://pytorch.org) performou pior. Para encontrar aonde os _frameworks_ diferiam em performance, diversos estudos foram realizados, porém, ainda não se obtiveram resultados realmente comparáveis entre as duas aplicações.
 
 ## Conceitos e comportamentos de classes e funções
 
