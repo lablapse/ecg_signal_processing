@@ -42,8 +42,21 @@ Assim, constatou-se que os valores gerados neste cenário são significativament
 
 Ademais, o _keras_ possui uma programação menos acessível aos valores de gradientes, o que gera problema novos para a análise deste resultados.
 
-Estas informações podem ser acessadas na pasta [comparing_backward_keras_torch](comparing_backward_keras_torch).
+Estas informações podem ser acessadas na pasta [comparing_backward_keras_torch](comparing_backward_keras_torch). 
 
+## Acesso aos _weights_ no _Pytorch_
+
+A ideia inicial que eu tive para comparar os resultados dos modelos foi simplesmente copiar os _weights_ treinados do _keras_ e carregá-los nos respectivos modelos no _Pytorch_. Desta maneira, caso as operações se comportassem de maneiras realmente distintas, este comportamento seria evidente. Porém, manipular os _weights_ de um modelo do _Pytorch_, principalmente qualquer um dos utilizados aqui para a classificação de ECG, se mostrou uma tarefa não trivial e, infelizmente, eu não fui capaz de realizar naquele momento. Os códigos gerados não foram carregados no _GitHub_ pois concluí que seria menos complexo simplesmente recomeçar a análise do zero no futuro.
+
+# Ajuda ao futuro programador
+
+Vou compartilhar pequenos pontos, óbvios ou não, que obrigatoriamente não devem ser esquecidos, para poupar incomodações no futuro:
+
+- Se atentar às dimensões do vetor utilizado no _keras_ e no _pytorch_, afina, a ordem dos canais pode ser invertida com a o tamanho do vetor nestes _frameworks_.
+- Observar os valores padrão nas funções e classes.
+- Ler com cuidado toda a documentação das funções e classes, afinal, as operações analisadas podem, inesperadamente, diferir do comportamento imaginado.
+- Não misturar os ambientes de _keras_ e _torch_, obtive muitos problemas especificamente por causa disso.
+- Caso os _scripts_ envolvendo o _keras_ se recussem a serem executados, saiba que isso aconteceu comigo. Destrua e reconstrua o ambiente _keras_ para **tentar** solucionar o problema.
 
 
 Ademais, a operação de _batch normalization_ do _keras_ apresenta comportamentos distintos durante o treinamento e a validação, o que serve de obstáculo para a análise direta 
