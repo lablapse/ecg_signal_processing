@@ -52,10 +52,10 @@ A ideia inicial que eu tive para comparar os resultados dos modelos foi simplesm
 
 Vou compartilhar pequenos pontos, óbvios ou não, que obrigatoriamente não devem ser esquecidos, para poupar incomodações no futuro:
 
-- Se atentar às dimensões do vetor utilizado no _keras_ e no _pytorch_, afina, a ordem dos canais pode ser invertida com a o tamanho do vetor nestes _frameworks_.
-- Observar os valores padrão nas funções e classes.
+- Se atentar às dimensões do vetor utilizado no _keras_ e no _pytorch_, afinal, dimensão dos canais pode ser invertida com a o tamanho do vetor nestes _frameworks_.
+- Observar os valores padrão nas funções e classes na hora de comparar os _frameworks_.
 - Ler com cuidado toda a documentação das funções e classes, afinal, as operações analisadas podem, inesperadamente, diferir do comportamento imaginado.
 - Não misturar os ambientes de _keras_ e _torch_, obtive muitos problemas especificamente por causa disso.
 - Caso os _scripts_ envolvendo o _keras_ se recussem a serem executados, saiba que isso aconteceu comigo. Destrua e reconstrua o ambiente _keras_ para **tentar** solucionar o problema.
-- E mais importante, **se precisa peça ajuda**.
+- E mais importante, **se precisar, peça ajuda**.
 
