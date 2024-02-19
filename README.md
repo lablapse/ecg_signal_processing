@@ -19,7 +19,7 @@ Como a biblioteca com a qual o trabalho foi originalmente desenvolvido - [keras]
 
 ## Conceitos e comportamentos de classes e funções
 
-Algumas operações diferem conceitualmente entre as bibliotecas. Por exemplo, o inicializador, que, neste caso, foi utilizado o qual geralmente se denomina '[He normal](https://arxiv.org/abs/1502.01852)'. Para o _Keras_, [este inicializador](https://keras.io/api/layers/initializers/) utiliza como base uma distribuição normal truncada, enquanto, para o _Pytorch_, a distribuição base não é truncada. Esta diferença por si só já é o suficiente para alterar completamente a performance das duas redes neurais por alterar os valores de inicialização. Além disso, lendo as documentações, sugerem-se diferenças de comportamento entre a operação de _dropout_, que vale ser investigado. 
+Algumas operações diferem conceitualmente entre as bibliotecas. Por exemplo, o inicializador que, neste caso, foi utilizado o qual geralmente se denomina '[He normal](https://arxiv.org/abs/1502.01852)'. Para o _Keras_, [este inicializador](https://keras.io/api/layers/initializers/) utiliza como base uma distribuição normal truncada, enquanto, para o _Pytorch_, a distribuição base não é truncada. Esta diferença por si só já é o suficiente para alterar completamente a performance das duas redes neurais por alterar os valores de inicialização. Além disso, lendo as documentações, sugerem-se diferenças de comportamento entre a operação de _dropout_, que vale ser investigado. 
 
 ## Análise de _forward_, _backward_ e os gradientes
 
