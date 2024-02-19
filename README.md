@@ -48,6 +48,10 @@ Estas informações podem ser acessadas na pasta [comparing_backward_keras_torch
 
 A ideia inicial que eu tive para comparar os resultados dos modelos foi simplesmente copiar os _weights_ treinados do _keras_ e carregá-los nos respectivos modelos no _Pytorch_. Desta maneira, caso as operações se comportassem de maneiras realmente distintas, este comportamento seria evidente. Porém, manipular os _weights_ de um modelo do _Pytorch_, principalmente qualquer um dos utilizados aqui para a classificação de ECG, se mostrou uma tarefa não trivial e, infelizmente, eu não fui capaz de realizar naquele momento. Os códigos gerados não foram carregados no _GitHub_ pois concluí que seria menos complexo simplesmente recomeçar a análise do zero no futuro.
 
+# Comparação das estruturas dos modelos
+
+Pode ser observado, na pasta [imagens](imagens/), quatro arquivos. Eles representam, de maneira gráfica, tanto os modelos programados anteriormente quanto os modelos recentes. Este tipo de apresentação da informação facilita a percepção de erros e diferenças, pois traz uma maneira mais amigável de se observar as redes neurais. Comparar os respectivos modelos com as imagens é uma forma de se encontrar erros.  
+
 # Ajuda ao futuro programador
 
 Vou compartilhar pequenos pontos, óbvios ou não, que obrigatoriamente não devem ser esquecidos, para poupar incomodações no futuro:
