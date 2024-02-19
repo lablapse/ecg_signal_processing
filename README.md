@@ -50,7 +50,7 @@ A ideia inicial que eu tive para comparar os resultados dos modelos foi simplesm
 
 # Comparação das estruturas dos modelos
 
-Pode ser observado, na pasta [imagens](imagens/), quatro arquivos. Eles representam, de maneira gráfica, tanto os modelos programados anteriormente quanto os modelos recentes. Este tipo de apresentação da informação facilita a percepção de erros e diferenças, pois traz uma maneira mais amigável de se observar as redes neurais. Comparar os respectivos modelos com as imagens é uma forma de se encontrar erros.  
+Pode ser observado, na pasta [imagens](imagens/), quatro arquivos. Eles representam, de maneira gráfica, tanto os modelos programados anteriormente quanto os modelos recentes. Este tipo de apresentação da informação facilita a percepção de erros e diferenças, pois traz uma maneira mais amigável de se observar as redes neurais. Assim, comparar os respectivos modelos com as imagens é uma forma de se encontrar erros.  
 
 # Ajuda ao futuro programador
 
